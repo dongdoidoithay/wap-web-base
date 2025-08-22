@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DomainConfig, getDomainConfig } from '../lib/domain-config';
+import { DomainConfig, getDomainConfig, getDomainConfigSync } from '../lib/domain-config';
 
 export function useDomain(): DomainConfig | null {
   const [config, setConfig] = useState<DomainConfig | null>(null);
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    const domainConfig = getDomainConfig(hostname);
+    
+    // Sử dụng sync version cho client-side
+    const domainConfig = getDomainConfigSync(hostname);
     setConfig(domainConfig);
   }, []);
 
@@ -17,5 +19,5 @@ export function useDomain(): DomainConfig | null {
 
 export function useDomainServer(headers: Headers): DomainConfig {
   const hostname = headers.get('host') || '';
-  return getDomainConfig(hostname);
+  return getDomainConfigSync(hostname);
 } 

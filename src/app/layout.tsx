@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { headers } from 'next/headers';
-import { getDomainConfig } from '../lib/domain-config';
+import { getDomainConfigSync } from '../lib/domain-config';
 import { ThemeProvider } from '../components/theme-provider';
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
-  const config = getDomainConfig(hostname);
+  const config = getDomainConfigSync(hostname);
 
   return {
     title: {

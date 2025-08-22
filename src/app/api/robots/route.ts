@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDomainConfig } from '../../../lib/domain-config';
+import { getDomainConfigSync } from '../../../lib/domain-config';
 
 export async function GET(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
-  const config = getDomainConfig(hostname);
+  const config = getDomainConfigSync(hostname);
   
   const baseUrl = `https://${config.domain}`;
   

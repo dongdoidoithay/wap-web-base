@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDomainConfig, getAllDomains } from './lib/domain-config';
+import { getDomainConfigSync, getAllDomainsSync } from './lib/domain-config';
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const domain = hostname.replace(/:\d+$/, '').toLowerCase();
   
   // Get domain configuration
-  const config = getDomainConfig(hostname);
+  const config = getDomainConfigSync(hostname);
   
   // Add domain info to headers for use in components
   const response = NextResponse.next();

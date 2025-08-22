@@ -27,86 +27,81 @@ export interface DomainConfig {
   };
 }
 
-export const domainConfigs: Record<string, DomainConfig> = {
-  'example.com': {
-    domain: 'example.com',
-    name: 'WAP Content Hub',
-    description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
-    logo: '🏷️',
-    theme: {
-      primaryColor: '#10B981',
-      secondaryColor: '#059669',
-    },
-    seo: {
-      title: 'WAP Content Hub — Fast, Mobile-First, SEO Ready',
-      description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
-      keywords: ['Next.js', 'SEO', 'Web Performance', 'Core Web Vitals'],
-      ogImage: '/og.jpg',
-      googleAnalyticsId: 'GA_MEASUREMENT_ID',
-    },
-    content: {
-      categories: ['Tin mới', 'Hướng dẫn', 'Đánh giá', 'Mẹo vặt', 'Phỏng vấn'],
-      featuredArticles: [1, 2, 3],
-    },
-    social: {
-      facebook: 'https://facebook.com/example',
-      twitter: 'https://twitter.com/example',
-    },
-  },
-  'techblog.com': {
-    domain: 'techblog.com',
-    name: 'Tech Blog Hub',
-    description: 'Cập nhật tin tức công nghệ mới nhất, hướng dẫn lập trình và đánh giá sản phẩm.',
-    logo: '💻',
-    theme: {
-      primaryColor: '#10B981',
-      secondaryColor: '#059669',
-    },
-    seo: {
-      title: 'Tech Blog Hub - Tin tức công nghệ và hướng dẫn lập trình',
-      description: 'Cập nhật tin tức công nghệ mới nhất, hướng dẫn lập trình và đánh giá sản phẩm.',
-      keywords: ['Công nghệ', 'Lập trình', 'Tin tức', 'Đánh giá', 'Hướng dẫn'],
-      ogImage: '/tech-og.jpg',
-      googleAnalyticsId: 'GA_TECH_ID',
-    },
-    content: {
-      categories: ['Tin tức', 'Lập trình', 'Đánh giá', 'Tutorial', 'AI/ML'],
-      featuredArticles: [1, 2, 3],
-    },
-    social: {
-      facebook: 'https://facebook.com/techblog',
-      twitter: 'https://twitter.com/techblog',
-      youtube: 'https://youtube.com/techblog',
-    },
-  },
-  'lifestyle.com': {
-    domain: 'lifestyle.com',
-    name: 'Lifestyle Magazine',
-    description: 'Chia sẻ về cuộc sống, sức khỏe, du lịch và những điều thú vị trong cuộc sống.',
-    logo: '🌟',
-    theme: {
-      primaryColor: '#10B981',
-      secondaryColor: '#059669',
-    },
-    seo: {
-      title: 'Lifestyle Magazine - Chia sẻ cuộc sống đẹp',
-      description: 'Chia sẻ về cuộc sống, sức khỏe, du lịch và những điều thú vị trong cuộc sống.',
-      keywords: ['Lifestyle', 'Sức khỏe', 'Du lịch', 'Ẩm thực', 'Thời trang'],
-      ogImage: '/lifestyle-og.jpg',
-      googleAnalyticsId: 'GA_LIFESTYLE_ID',
-    },
-    content: {
-      categories: ['Sức khỏe', 'Du lịch', 'Ẩm thực', 'Thời trang', 'Làm đẹp'],
-      featuredArticles: [1, 2, 3],
-    },
-    social: {
-      instagram: 'https://instagram.com/lifestyle',
-      facebook: 'https://facebook.com/lifestyle',
-    },
-  },
-};
+// Cache để lưu cấu hình domains
+let domainConfigsCache: Record<string, DomainConfig> | null = null;
 
-export function getDomainConfig(hostname: string): DomainConfig {
+// Hàm để đọc cấu hình từ file JSON
+async function loadDomainConfigs(): Promise<Record<string, DomainConfig>> {
+  if (domainConfigsCache) {
+    return domainConfigsCache;
+  }
+
+  try {
+    // Server & Edge: cần URL tuyệt đối cho fetch
+    if (typeof window === 'undefined') {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+        || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${process.env.PORT || 3000}`);
+      const response = await fetch(`${baseUrl}/domains-config.json`, { cache: 'no-store' } as RequestInit);
+      if (!response.ok) {
+        throw new Error('Failed to load domain configs');
+      }
+      const configs = (await response.json()) as Record<string, DomainConfig>;
+      domainConfigsCache = configs;
+      return configs;
+    }
+
+    // Client: fetch từ public
+    const response = await fetch('/domains-config.json', { cache: 'no-store' } as RequestInit);
+    if (!response.ok) {
+      throw new Error('Failed to load domain configs');
+    }
+    const configs = (await response.json()) as Record<string, DomainConfig>;
+    domainConfigsCache = configs;
+    return configs;
+  } catch (error) {
+    console.error('Error loading domain configs:', error);
+    // Fallback config nếu không thể đọc file
+    const fallbackConfig = {
+      'example.com': {
+        domain: 'example.com',
+        name: 'WAP Content Hub',
+        description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
+        logo: '🏷️',
+        theme: {
+          primaryColor: '#10B981',
+          secondaryColor: '#059669',
+        },
+        seo: {
+          title: 'WAP Content Hub — Fast, Mobile-First, SEO Ready',
+          description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
+          keywords: ['Next.js', 'SEO', 'Web Performance', 'Core Web Vitals'],
+          ogImage: '/og.jpg',
+          googleAnalyticsId: 'GA_MEASUREMENT_ID',
+        },
+        content: {
+          categories: ['Tin mới', 'Hướng dẫn', 'Đánh giá', 'Mẹo vặt', 'Phỏng vấn'],
+          featuredArticles: [1, 2, 3],
+        },
+        social: {
+          facebook: 'https://facebook.com/example',
+          twitter: 'https://twitter.com/example',
+        },
+      },
+    } as Record<string, DomainConfig>;
+    domainConfigsCache = fallbackConfig;
+    return fallbackConfig;
+  }
+}
+
+export async function refreshDomainConfigsCache(): Promise<void> {
+  domainConfigsCache = null;
+  await loadDomainConfigs();
+}
+
+// Hàm để lấy cấu hình domain (async)
+export async function getDomainConfig(hostname: string): Promise<DomainConfig> {
+  const domainConfigs = await loadDomainConfigs();
+  
   // Remove port and protocol
   const domain = hostname.replace(/:\d+$/, '').toLowerCase();
   
@@ -131,6 +126,145 @@ export function getDomainConfig(hostname: string): DomainConfig {
   return domainConfigs['example.com'];
 }
 
-export function getAllDomains(): string[] {
+// Hàm để lấy cấu hình domain (sync - cho middleware và layout)
+export function getDomainConfigSync(hostname: string): DomainConfig {
+  // Sử dụng cache nếu có, nếu không thì dùng fallback
+  if (domainConfigsCache) {
+    const domain = hostname.replace(/:\d+$/, '').toLowerCase();
+    
+    if (domainConfigsCache[domain]) {
+      return domainConfigsCache[domain];
+    }
+    
+    const subdomain = domain.split('.')[0];
+    const mainDomain = domain.split('.').slice(-2).join('.');
+    
+    if (domainConfigsCache[mainDomain]) {
+      return {
+        ...domainConfigsCache[mainDomain],
+        domain: domain,
+        name: `${domainConfigsCache[mainDomain].name} - ${subdomain}`,
+      };
+    }
+    
+    return domainConfigsCache['example.com'];
+  }
+  
+  // Fallback config nếu chưa có cache
+  return {
+    domain: 'example.com',
+    name: 'WAP Content Hub',
+    description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
+    logo: '🏷️',
+    theme: {
+      primaryColor: '#10B981',
+      secondaryColor: '#059669',
+    },
+    seo: {
+      title: 'WAP Content Hub — Fast, Mobile-First, SEO Ready',
+      description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
+      keywords: ['Next.js', 'SEO', 'Web Performance', 'Core Web Vitals'],
+      ogImage: '/og.jpg',
+      googleAnalyticsId: 'GA_MEASUREMENT_ID',
+    },
+    content: {
+      categories: ['Tin mới', 'Hướng dẫn', 'Đánh giá', 'Mẹo vặt', 'Phỏng vấn'],
+      featuredArticles: [1, 2, 3],
+    },
+    social: {
+      facebook: 'https://facebook.com/example',
+      twitter: 'https://twitter.com/example',
+    },
+  };
+}
+
+// Hàm để lấy tất cả domains (async)
+export async function getAllDomains(): Promise<string[]> {
+  const domainConfigs = await loadDomainConfigs();
   return Object.keys(domainConfigs);
+}
+
+// Hàm để lấy tất cả domains (sync)
+export function getAllDomainsSync(): string[] {
+  if (domainConfigsCache) {
+    return Object.keys(domainConfigsCache);
+  }
+  return ['example.com'];
+}
+
+// Hàm để cập nhật cấu hình domain
+export async function updateDomainConfig(domain: string, config: DomainConfig): Promise<boolean> {
+  try {
+    const domainConfigs = await loadDomainConfigs();
+    domainConfigs[domain] = config;
+    
+    // Gửi cập nhật đến API để lưu vào file
+    const response = await fetch('/api/domains/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ domain, config }),
+    });
+    
+    if (response.ok) {
+      // Cập nhật cache
+      domainConfigsCache = domainConfigs;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error updating domain config:', error);
+    return false;
+  }
+}
+
+// Hàm để xóa domain
+export async function deleteDomain(domain: string): Promise<boolean> {
+  try {
+    const domainConfigs = await loadDomainConfigs();
+    delete domainConfigs[domain];
+    
+    const response = await fetch('/api/domains/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ domain }),
+    });
+    
+    if (response.ok) {
+      domainConfigsCache = domainConfigs;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error deleting domain:', error);
+    return false;
+  }
+}
+
+// Hàm để thêm domain mới
+export async function addDomain(domain: string, config: DomainConfig): Promise<boolean> {
+  try {
+    const domainConfigs = await loadDomainConfigs();
+    domainConfigs[domain] = config;
+    
+    const response = await fetch('/api/domains/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ domain, config }),
+    });
+    
+    if (response.ok) {
+      domainConfigsCache = domainConfigs;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error adding domain:', error);
+    return false;
+  }
 } 

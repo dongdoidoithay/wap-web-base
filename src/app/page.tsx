@@ -2,7 +2,7 @@ import Image from "next/image";
 import React from "react";
 import Link from "next/link";
 import { headers } from 'next/headers';
-import { getDomainConfig } from '../lib/domain-config';
+import { getDomainConfigSync } from '../lib/domain-config';
 import { SEOHead } from '../components/seo-head';
 
 // Dummy data — replace with your CMS/API
@@ -207,7 +207,7 @@ function FooterNav() {
 export default async function Home() {
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
-  const config = getDomainConfig(hostname);
+  const config = getDomainConfigSync(hostname);
 
   const siteLd = {
     "@context": "https://schema.org",

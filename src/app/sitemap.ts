@@ -1,12 +1,12 @@
 import { MetadataRoute } from 'next';
 import { headers } from 'next/headers';
-import { getDomainConfig } from '../../lib/domain-config';
+import { getDomainConfigSync } from '../../lib/domain-config';
 import { getSitemapPagesCount, getStaticPages, getCategories } from '../../lib/database';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
-  const config = getDomainConfig(hostname);
+  const config = getDomainConfigSync(hostname);
   
   const baseUrl = `https://${config.domain}`;
   

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDomainConfig } from '../../../../lib/domain-config';
+import { getDomainConfigSync } from '../../../../lib/domain-config';
 import { getArticlesByPage, getSitemapPagesCount } from '../../../../lib/database';
 
 export async function GET(
@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: { page: string } }
 ) {
   const hostname = request.headers.get('host') || '';
-  const config = getDomainConfig(hostname);
+  const config = getDomainConfigSync(hostname);
   const baseUrl = `https://${config.domain}`;
   
   const page = parseInt(params.page);

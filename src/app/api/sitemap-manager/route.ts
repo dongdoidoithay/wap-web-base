@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSitemapCache, setSitemapCache, invalidateSitemapCache, getCacheStats } from '../../../lib/sitemap-cache';
-import { getDomainConfig } from '../../../lib/domain-config';
+import { getDomainConfigSync } from '../../../lib/domain-config';
 import { getArticlesCount, getSitemapPagesCount } from '../../../lib/database';
 
 export async function GET(request: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   }
   
   try {
-    const config = getDomainConfig(hostname);
+    const config = getDomainConfigSync(hostname);
     const cache = await getSitemapCache(config.domain);
     
     if (!cache) {
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    const config = getDomainConfig(hostname);
+    const config = getDomainConfigSync(hostname);
     
     switch (action) {
       case 'regenerate':
