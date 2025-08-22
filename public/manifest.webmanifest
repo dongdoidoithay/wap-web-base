@@ -1,0 +1,27 @@
+{
+  "name": "WAP Content Hub",
+  "short_name": "WAP Hub",
+  "description": "A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10B981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["news", "productivity"],
+  "lang": "vi",
+  "dir": "ltr"
+} 

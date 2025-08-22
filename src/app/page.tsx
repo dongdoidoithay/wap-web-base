@@ -1,58 +1,16 @@
 import Image from "next/image";
-
-// File: app/page.tsx  (Next.js 13+ App Router)
-// TailwindCSS mobile-first WAP template focused on content + SEO OnPage
-// Quick setup (once): npx create-next-app@latest; npm i -D tailwindcss postcss autoprefixer; npx tailwindcss init -p
-// In tailwind.config.js add: content: ["./app/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"]
-// In globals.css add Tailwind base/components/utilities and set body bg/text.
-
 import React from "react";
-import Head from "next/head";
 import Link from "next/link";
-
-export const metadata = {
-  title: "WAP Content Hub — Fast, Mobile-First, SEO Ready",
-  description:
-    "A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.",
-  metadataBase: new URL("https://example.com"),
-  alternates: { canonical: "/" },
-  openGraph: {
-    title: "WAP Content Hub — Fast, Mobile-First, SEO Ready",
-    description:
-      "A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.",
-    url: "https://example.com",
-    siteName: "WAP Content Hub",
-    images: [
-      { url: "/og.jpg", width: 1200, height: 630, alt: "WAP Content Hub" },
-    ],
-    locale: "vi_VN",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "WAP Content Hub — Fast, Mobile-First, SEO Ready",
-    description:
-      "A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.",
-    images: ["/og.jpg"],
-  },
-};
+import { headers } from 'next/headers';
+import { getDomainConfig } from '../lib/domain-config';
+import { SEOHead } from '../components/seo-head';
 
 // Dummy data — replace with your CMS/API
-const categories = [
-  "Tin mới",
-  "Hướng dẫn",
-  "Đánh giá",
-  "Mẹo vặt",
-  "Phỏng vấn",
-];
-
 const articles = [
   {
     id: 1,
-    title:
-      "Tối ưu Core Web Vitals cho trang WAP trong 15 phút",
-    excerpt:
-      "Checklist nhanh: LCP, CLS, INP, lazy-load, critical CSS, font-display...",
+    title: "Tối ưu Core Web Vitals cho trang WAP trong 15 phút",
+    excerpt: "Checklist nhanh: LCP, CLS, INP, lazy-load, critical CSS, font-display...",
     cover: "/images/lcp.jpg",
     href: "/bai-viet/core-web-vitals-15-phut",
     date: "2025-08-01",
@@ -62,8 +20,7 @@ const articles = [
   {
     id: 2,
     title: "Hướng dẫn cấu trúc Heading H1-H6 đúng chuẩn SEO",
-    excerpt:
-      "Cách phân tầng nội dung, tránh trùng lặp, tăng khả năng hiểu ngữ nghĩa.",
+    excerpt: "Cách phân tầng nội dung, tránh trùng lặp, tăng khả năng hiểu ngữ nghĩa.",
     cover: "/images/heading.jpg",
     href: "/bai-viet/heading-seo-prep",
     date: "2025-07-24",
@@ -73,8 +30,7 @@ const articles = [
   {
     id: 3,
     title: "Schema Article & FAQ: tăng CTR và hiển thị rich result",
-    excerpt:
-      "Thêm JSON-LD, kiểm tra bằng Rich Results Test, lưu ý review.",
+    excerpt: "Thêm JSON-LD, kiểm tra bằng Rich Results Test, lưu ý review.",
     cover: "/images/schema.jpg",
     href: "/bai-viet/schema-article-faq",
     date: "2025-07-18",
@@ -83,17 +39,19 @@ const articles = [
   },
 ];
 
-function Header() {
+function Header({ config }: { config: any }) {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-100">
       <div className="mx-auto max-w-screen-sm px-3 py-2 flex items-center justify-between">
         <Link href="/" aria-label="Trang chủ" className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-gray-200 shadow-sm">🏷️</span>
-          <span className="font-semibold tracking-tight">WAP Content Hub</span>
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-gray-200 shadow-sm">
+            {config.logo}
+          </span>
+          <span className="font-semibold tracking-tight">{config.name}</span>
         </Link>
         <nav className="flex items-center gap-2">
-          <Link href="/chuyen-muc" className="text-sm text-gray-600 hover:text-gray-900">Chuyên mục</Link>
-          <Link href="/ve-chung-toi" className="text-sm text-gray-600 hover:text-gray-900">About</Link>
+          <Link href="/chuyen-muc" className="text-sm text-gray-600 hover:text-green-600 transition-colors">Chuyên mục</Link>
+          <Link href="/ve-chung-toi" className="text-sm text-gray-600 hover:text-green-600 transition-colors">About</Link>
         </nav>
       </div>
     </header>
@@ -124,7 +82,7 @@ function SearchBar() {
         />
         <button
           type="submit"
-          className="rounded-xl px-3 py-1.5 text-sm font-medium border border-gray-200 hover:bg-gray-50"
+          className="rounded-xl px-3 py-1.5 text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
         >
           Tìm
         </button>
@@ -133,7 +91,7 @@ function SearchBar() {
   );
 }
 
-function CategoryChips() {
+function CategoryChips({ categories }: { categories: string[] }) {
   return (
     <div className="mx-auto max-w-screen-sm px-3 py-2 overflow-x-auto">
       <ul className="flex gap-2 whitespace-nowrap">
@@ -141,7 +99,7 @@ function CategoryChips() {
           <li key={c}>
             <Link
               href={`/chuyen-muc/${encodeURIComponent(c)}`}
-              className="inline-flex items-center rounded-full border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50"
+              className="inline-flex items-center rounded-full border border-green-200 px-3 py-1.5 text-sm hover:bg-green-50 text-green-700"
             >
               {c}
             </Link>
@@ -152,13 +110,12 @@ function CategoryChips() {
   );
 }
 
-function Featured() {
+function Featured({ articles, config }: { articles: any[], config: any }) {
   const a = articles[0];
   return (
     <section className="mx-auto max-w-screen-sm px-3 pt-3">
       <article className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <Link href={a.href} className="block">
-          {/* Use next/image in real app for better perf */}
           <img
             src={a.cover}
             alt={a.title}
@@ -182,7 +139,7 @@ function Featured() {
   );
 }
 
-function ArticleList() {
+function ArticleList({ articles }: { articles: any[] }) {
   return (
     <section className="mx-auto max-w-screen-sm px-3 py-3">
       <ul className="grid gap-3">
@@ -235,7 +192,7 @@ function FooterNav() {
           <li key={i.href}>
             <Link
               href={i.href}
-              className="flex flex-col items-center rounded-xl px-3 py-1.5 hover:bg-gray-50"
+              className="flex flex-col items-center rounded-xl px-3 py-1.5 hover:bg-green-50 transition-colors"
             >
               <span aria-hidden>{i.emoji}</span>
               <span className="mt-0.5 text-[11px] text-gray-700">{i.label}</span>
@@ -247,15 +204,20 @@ function FooterNav() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const headersList = await headers();
+  const hostname = headersList.get('host') || '';
+  const config = getDomainConfig(hostname);
+
   const siteLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "WAP Content Hub",
-    url: "https://example.com",
+    name: config.name,
+    url: `https://${config.domain}`,
+    description: config.description,
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://example.com/search?q={search_term_string}",
+      target: `https://${config.domain}/search?q={search_term_string}`,
       "query-input": "required name=search_term_string",
     },
   };
@@ -268,48 +230,26 @@ export default function Home() {
         "@type": "ListItem",
         position: 1,
         name: "Trang chủ",
-        item: "https://example.com/",
+        item: `https://${config.domain}/`,
       },
     ],
   };
 
   return (
     <>
-      {/* Extra head tags (app router still allows <Head/> for custom tags) */}
-      <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#ffffff" />
-        <link rel="manifest" href="/manifest.webmanifest" />
-        <script
-          type="application/ld+json"
-          // @ts-ignore
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteLd) }}
-        />
-        <script
-          type="application/ld+json"
-          // @ts-ignore
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
-        />
-      </Head>
-
+      <SEOHead />
+      
       <div className="min-h-dvh bg-gray-50 text-gray-900">
-        <Header />
+        <Header config={config} />
         <main>
           <SearchBar />
-          <CategoryChips />
-          <Featured />
-          <ArticleList />
+          <CategoryChips categories={config.content.categories} />
+          <Featured articles={articles} config={config} />
+          <ArticleList articles={articles} />
         </main>
         <FooterNav />
       </div>
     </>
   );
 }
-
-// --- Notes ---
-// 1) Replace dummy data with your source (CMS, DB). Stream content with Next.js fetch caching for speed.
-// 2) For images, switch <img> to next/image for auto-optimized images.
-// 3) Add pagination (cursor/offset) for article list. Pre-render critical pages (SSG/ISR) for SEO.
-// 4) Use <link rel="preconnect"> to your CDN and font host. Prefer system fonts to avoid FOIT.
-// 5) Monitor CWV: use next/script to inject Analytics (GTM/Gtag) and measure LCP/INP.
 
