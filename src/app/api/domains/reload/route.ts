@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { refreshDomainConfigsCache } from '../../../../lib/domain-config';
+import { refreshDomainConfigsCache } from '@/lib/domain-config';
 
 export async function POST(_request: NextRequest) {
   try {

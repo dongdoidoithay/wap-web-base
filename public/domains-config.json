@@ -1,42 +1,93 @@
 {
   "example.com": {
     "domain": "example.com",
-    "name": "WAP Content Hub 6",
-    "description": "A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.",
+    "name": "Website Name",
+    "description": "Website description here",
     "logo": "🏷️",
     "theme": {
       "primaryColor": "#10B981",
-      "secondaryColor": "#059669"
+      "secondaryColor": "#059669",
+      "accentColor": "#34D399",
+      "backgroundColor": "#F9FAFB",
+      "surfaceColor": "#FFFFFF",
+      "textPrimary": "#111827",
+      "textSecondary": "#6B7280",
+      "textMuted": "#9CA3AF",
+      "successColor": "#10B981",
+      "warningColor": "#F59E0B",
+      "errorColor": "#EF4444",
+      "infoColor": "#3B82F6",
+      "linkColor": "#10B981",
+      "linkHoverColor": "#059669",
+      "buttonColor": "#10B981",
+      "buttonTextColor": "#FFFFFF",
+      "borderColor": "#D1D5DB",
+      "borderLightColor": "#E5E7EB",
+      "focusColor": "#10B981",
+      "gradientFrom": "#10B981",
+      "gradientTo": "#059669"
     },
     "seo": {
-      "title": "WAP Content Hub — Fast, Mobile-First, SEO Ready",
-      "description": "A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.",
+      "title": "Default Website Title",
+      "description": "Default website description",
       "keywords": [
-        "Next.js",
-        "SEO",
-        "Web Performance",
-        "Core Web Vitals"
+        "keyword1",
+        "keyword2"
       ],
       "ogImage": "/og.jpg",
-      "googleAnalyticsId": "GA_MEASUREMENT_ID"
+      "template": {
+        "detail": "%title% - %author% | %domain%",
+        "group": "%group% - %domain%",
+        "type": "%type% - %domain%"
+      }
     },
     "content": {
       "categories": [
-        "Tin mới",
-        "Hướng dẫn",
-        "Đánh giá",
-        "Mẹo vặt",
-        "Phỏng vấn"
+        "News",
+        "Tutorial",
+        "Review"
       ],
-      "featuredArticles": [
-        1,
-        2,
-        3
-      ]
+      "featuredArticles": []
     },
     "social": {
-      "facebook": "https://facebook.com/example",
-      "twitter": "https://twitter.com/example"
+      "facebook": "",
+      "twitter": "",
+      "instagram": "",
+      "youtube": ""
+    },
+    "paths": {
+      "vietnamese": "doc-truyen",
+      "english": "read-manga",
+      "search": "tim-kiem"
+    },
+    "languages": {
+      "default": "vi",
+      "supported": [
+        "vi",
+        "en"
+      ]
+    },
+    "api": {
+      "vietnamese": "/api/manga-vn",
+      "english": "/api/manga-en",
+      "search": "/api/search",
+      "auth": "/api/auth"
+    },
+    "routes": {
+      "doc-truyen": {
+        "path": "doc-truyen",
+        "api": "/api/manga-vn",
+        "language": "vi",
+        "title": "Đọc Truyện",
+        "description": "Content in Vietnamese"
+      },
+      "read-manga": {
+        "path": "read-manga",
+        "api": "/api/manga-en",
+        "language": "en",
+        "title": "Read Content",
+        "description": "Content in English"
+      }
     }
   },
   "techblog.com": {
@@ -46,7 +97,26 @@
     "logo": "💻",
     "theme": {
       "primaryColor": "#10B981",
-      "secondaryColor": "#059669"
+      "secondaryColor": "#059669",
+      "accentColor": "#34D399",
+      "backgroundColor": "#F9FAFB",
+      "surfaceColor": "#FFFFFF",
+      "textPrimary": "#111827",
+      "textSecondary": "#6B7280",
+      "textMuted": "#9CA3AF",
+      "successColor": "#10B981",
+      "warningColor": "#F59E0B",
+      "errorColor": "#EF4444",
+      "infoColor": "#3B82F6",
+      "linkColor": "#10B981",
+      "linkHoverColor": "#059669",
+      "buttonColor": "#10B981",
+      "buttonTextColor": "#FFFFFF",
+      "borderColor": "#D1D5DB",
+      "borderLightColor": "#E5E7EB",
+      "focusColor": "#10B981",
+      "gradientFrom": "#10B981",
+      "gradientTo": "#059669"
     },
     "seo": {
       "title": "Tech Blog Hub - Tin tức công nghệ và hướng dẫn lập trình",
@@ -88,7 +158,26 @@
     "logo": "🌟",
     "theme": {
       "primaryColor": "#10B981",
-      "secondaryColor": "#059669"
+      "secondaryColor": "#059669",
+      "accentColor": "#34D399",
+      "backgroundColor": "#F9FAFB",
+      "surfaceColor": "#FFFFFF",
+      "textPrimary": "#111827",
+      "textSecondary": "#6B7280",
+      "textMuted": "#9CA3AF",
+      "successColor": "#10B981",
+      "warningColor": "#F59E0B",
+      "errorColor": "#EF4444",
+      "infoColor": "#3B82F6",
+      "linkColor": "#10B981",
+      "linkHoverColor": "#059669",
+      "buttonColor": "#10B981",
+      "buttonTextColor": "#FFFFFF",
+      "borderColor": "#D1D5DB",
+      "borderLightColor": "#E5E7EB",
+      "focusColor": "#10B981",
+      "gradientFrom": "#10B981",
+      "gradientTo": "#059669"
     },
     "seo": {
       "title": "Lifestyle Magazine - Chia sẻ cuộc sống đẹp",

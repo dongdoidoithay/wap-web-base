@@ -28,7 +28,9 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Custom green theme classes */
+/* Custom theme classes */
+
+/* Background classes */
 .bg-primary {
   background-color: var(--primary);
 }
@@ -41,6 +43,43 @@ body {
   background-color: var(--primary-light);
 }
 
+.bg-secondary {
+  background-color: var(--secondary);
+}
+
+.bg-accent {
+  background-color: var(--accent);
+}
+
+.bg-surface {
+  background-color: var(--surface);
+}
+
+.bg-background {
+  background-color: var(--background);
+}
+
+.bg-success {
+  background-color: var(--success);
+}
+
+.bg-warning {
+  background-color: var(--warning);
+}
+
+.bg-error {
+  background-color: var(--error);
+}
+
+.bg-info {
+  background-color: var(--info);
+}
+
+.bg-button {
+  background-color: var(--button);
+}
+
+/* Text classes */
 .text-primary {
   color: var(--primary);
 }
@@ -49,6 +88,51 @@ body {
   color: var(--primary-dark);
 }
 
+.text-secondary {
+  color: var(--secondary);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.text-body-primary {
+  color: var(--text-primary);
+}
+
+.text-body-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-success {
+  color: var(--success);
+}
+
+.text-warning {
+  color: var(--warning);
+}
+
+.text-error {
+  color: var(--error);
+}
+
+.text-info {
+  color: var(--info);
+}
+
+.text-link {
+  color: var(--link);
+}
+
+.text-button {
+  color: var(--button-text);
+}
+
+/* Border classes */
 .border-primary {
   border-color: var(--primary);
 }
@@ -57,6 +141,57 @@ body {
   border-color: var(--primary-dark);
 }
 
+.border-secondary {
+  border-color: var(--secondary);
+}
+
+.border-accent {
+  border-color: var(--accent);
+}
+
+.border-default {
+  border-color: var(--border);
+}
+
+.border-light {
+  border-color: var(--border-light);
+}
+
+.border-success {
+  border-color: var(--success);
+}
+
+.border-warning {
+  border-color: var(--warning);
+}
+
+.border-error {
+  border-color: var(--error);
+}
+
+.border-info {
+  border-color: var(--info);
+}
+
+.bg-light {
+  background-color: var(--border-light);
+}
+
+/* Animation classes */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Hover classes */
 .hover\:bg-primary:hover {
   background-color: var(--primary);
 }
@@ -65,6 +200,138 @@ body {
   background-color: var(--primary-dark);
 }
 
+.hover\:bg-secondary:hover {
+  background-color: var(--secondary);
+}
+
+.hover\:bg-accent:hover {
+  background-color: var(--accent);
+}
+
 .hover\:text-primary:hover {
   color: var(--primary);
+}
+
+.hover\:text-link:hover {
+  color: var(--link-hover);
+}
+
+.hover\:text-link-hover:hover {
+  color: var(--link-hover);
+}
+
+.hover\:text-body-secondary:hover {
+  color: var(--text-secondary);
+}
+
+.hover\:border-primary:hover {
+  border-color: var(--primary);
+}
+
+/* Opacity variations */
+.bg-primary\/90 {
+  background-color: var(--primary);
+  opacity: 0.9;
+}
+
+.bg-success\/90 {
+  background-color: var(--success);
+  opacity: 0.9;
+}
+
+.bg-warning\/90 {
+  background-color: var(--warning);
+  opacity: 0.9;
+}
+
+.bg-error\/90 {
+  background-color: var(--error);
+  opacity: 0.9;
+}
+
+.bg-info\/90 {
+  background-color: var(--info);
+  opacity: 0.9;
+}
+
+.bg-primary\/10 {
+  background-color: var(--primary);
+  opacity: 0.1;
+}
+
+.bg-success\/10 {
+  background-color: var(--success);
+  opacity: 0.1;
+}
+
+.bg-error\/10 {
+  background-color: var(--error);
+  opacity: 0.1;
+}
+
+.bg-info\/10 {
+  background-color: var(--info);
+  opacity: 0.1;
+}
+
+.bg-success\/20 {
+  background-color: var(--success);
+  opacity: 0.2;
+}
+
+.bg-error\/20 {
+  background-color: var(--error);
+  opacity: 0.2;
+}
+
+.bg-info\/20 {
+  background-color: var(--info);
+  opacity: 0.2;
+}
+
+.bg-warning\/20 {
+  background-color: var(--warning);
+  opacity: 0.2;
+}
+
+.border-success\/20 {
+  border-color: var(--success);
+  opacity: 0.2;
+}
+
+.border-error\/20 {
+  border-color: var(--error);
+  opacity: 0.2;
+}
+
+.border-info\/20 {
+  border-color: var(--info);
+  opacity: 0.2;
+}
+
+.border-warning\/20 {
+  border-color: var(--warning);
+  opacity: 0.2;
+}
+
+/* Focus classes */
+.focus\:border-primary:focus {
+  border-color: var(--focus);
+}
+
+.focus\:ring-primary:focus {
+  --tw-ring-color: var(--focus);
+}
+
+/* Gradient classes */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+}
+
+.bg-gradient-to-r {
+  background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+}
+
+.bg-gradient-to-b {
+  background: linear-gradient(to bottom, var(--gradient-from), var(--gradient-to));
 }

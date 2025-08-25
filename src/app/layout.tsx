@@ -3,6 +3,8 @@ import "./globals.css";
 import { headers } from 'next/headers';
 import { getDomainConfigSync } from '../lib/domain-config';
 import { ThemeProvider } from '../components/theme-provider';
+import { ClientOnly } from '../components/client-only';
+import { ServerThemeProvider } from '../components/server-theme-provider';
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
@@ -72,10 +74,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body className="antialiased">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+      {/* suppressHydrationWarning prevents hydration errors from browser extensions like Grammarly */}
+      <body className="antialiased" suppressHydrationWarning={true}>
+        <ServerThemeProvider>
+          <ClientOnly fallback={children}>
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
+          </ClientOnly>
+        </ServerThemeProvider>
       </body>
     </html>
   );

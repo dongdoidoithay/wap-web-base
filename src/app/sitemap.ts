@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { headers } from 'next/headers';
-import { getDomainConfigSync } from '../../lib/domain-config';
-import { getSitemapPagesCount, getStaticPages, getCategories } from '../../lib/database';
+import { getDomainConfigSync } from '@/lib/domain-config';
+import { getSitemapPagesCount, getStaticPages, getCategories } from '@/lib/database';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const headersList = await headers();

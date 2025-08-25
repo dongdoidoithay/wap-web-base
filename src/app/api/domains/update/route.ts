@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { refreshDomainConfigsCache } from '@/lib/domain-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest) {
     
     // Ghi lại vào file
     await fs.writeFile(configPath, JSON.stringify(currentConfig, null, 2));
+    
+    // Xóa cache để force reload cấu hình mới
+    await refreshDomainConfigsCache();
     
     return NextResponse.json({
       success: true,
