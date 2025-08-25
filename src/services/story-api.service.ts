@@ -3,6 +3,9 @@
  * Handles all API data fetching, caching, and data transformation for story-related endpoints
  */
 
+import { API_CONFIG, STORY_API_CONFIG, getStoryCacheTtl, type ApiServiceConfig } from '../lib/api-config';
+import { createFetchOptions, debugLog } from '../lib/api-config';
+
 // API Interfaces
 export interface StoryItem {
   idDoc: string;
@@ -44,30 +47,8 @@ export interface CacheEntry<T> {
   expiresAt: number;
 }
 
-export interface ApiConfig {
-  baseUrl: string;
-  timeout: number;
-  defaultHeaders: Record<string, string>;
-  cache: {
-    enabled: boolean;
-    defaultTtl: number;
-    maxEntries: number;
-  };
-}
-
-// API Configuration
-const API_CONFIG: ApiConfig = {
-  baseUrl: 'http://localhost:9000/api/six-vn',
-  timeout: 3000, // 3 seconds timeout
-  defaultHeaders: {
-    'Content-Type': 'application/json',
-  },
-  cache: {
-    enabled: true,
-    defaultTtl: 300000, // 5 minutes
-    maxEntries: 50,
-  },
-};
+// Use centralized API configuration
+const apiConfig = STORY_API_CONFIG;
 
 // In-memory cache implementation
 class MemoryCache {
@@ -131,33 +112,30 @@ class MemoryCache {
 }
 
 // Global cache instance
-const apiCache = new MemoryCache(API_CONFIG.cache.maxEntries);
+const apiCache = new MemoryCache(apiConfig.cache.maxEntries);
 
 /**
  * Maps raw API response data to StoryItem interface
  */
 function mapToStoryItem(item: any): StoryItem {
   return {
-    idDoc: item.id || item.idDoc,
-    title: item.title,
-    sortDesc: item.description || item.sortDesc,
+    idDoc:item.idDoc,
+    title: item.name,
+    sortDesc:  item.sortDesc,
     image: item.image,
     thumbnail: item.thumbnail,
     url: item.url,
     slug: item.slug,
-    auth: item.author || item.auth,
-    authName: item.authorName || item.authName || item.author,
-    genres: item.category || item.genres,
-    genresName: item.categoryName || item.genresName || item.category,
+    auth: item.auth,
+    authName: item.authName ,
+    genres:  item.genres,
+    genresName: item.genresName ,
     status: item.status,
     statusName: item.statusName,
     views: item.views,
     follows: item.follows,
-    chapters: item.chapters,
-    lastChapter: item.lastChapter,
-    updatedAt: item.updatedAt,
-    createdAt: item.createdAt,
-    date: item.date || item.updatedAt,
+    chapters: item.dtaildocuments,
+    date: item.date ,
   };
 }
 
@@ -167,7 +145,7 @@ function mapToStoryItem(item: any): StoryItem {
 async function enhancedFetch(
   url: string,
   options: RequestInit = {},
-  timeout: number = API_CONFIG.timeout
+  timeout: number = apiConfig.timeout
 ): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -176,7 +154,7 @@ async function enhancedFetch(
     const response = await fetch(url, {
       ...options,
       headers: {
-        ...API_CONFIG.defaultHeaders,
+        ...apiConfig.defaultHeaders,
         'Accept-Encoding': 'gzip, deflate, br',
         'Connection': 'keep-alive',
         ...options.headers,
@@ -201,8 +179,8 @@ async function enhancedFetch(
 async function apiCall<T>(
   endpoint: string,
   cacheKey: string,
-  cacheTtl: number = API_CONFIG.cache.defaultTtl,
-  useCache: boolean = API_CONFIG.cache.enabled
+  cacheTtl: number = apiConfig.cache.defaultTtl,
+  useCache: boolean = apiConfig.cache.enabled
 ): Promise<ApiResponse<T>> {
   const startTime = Date.now();
   let cacheStatus: 'HIT' | 'MISS' | 'UNKNOWN' = 'UNKNOWN';
@@ -221,7 +199,7 @@ async function apiCall<T>(
   }
 
   try {
-    const url = `${API_CONFIG.baseUrl}${endpoint}`;
+    const url = `${apiConfig.baseUrl}${endpoint}`;
     console.log(`[StoryApiService] Fetching: ${url}`);
 
     const response = await enhancedFetch(url);
@@ -333,7 +311,7 @@ export async function fetchLatestStories(
   return apiCall<StoryItem>(
     `/HomeLastUpdate/${limit}/${page}`,
     cacheKey,
-    300000, // 5 minutes
+    getStoryCacheTtl('latest'),
     useCache
   );
 }
@@ -350,7 +328,7 @@ export async function fetchTopFollowStories(
   return apiCall<StoryItem>(
     `/HomeTopFllow/${limit}/${page}`,
     cacheKey,
-    600000, // 10 minutes
+    getStoryCacheTtl('topFollow'),
     useCache
   );
 }
@@ -366,7 +344,7 @@ export async function fetchTopDayStories(
   return apiCall<StoryItem>(
     `/HomeTopDay/${limit}`,
     cacheKey,
-    3600000, // 1 hour
+    getStoryCacheTtl('topDay'),
     useCache
   );
 }
@@ -406,17 +384,20 @@ export function invalidateCache(pattern?: string): void {
 /**
  * Update API configuration
  */
-export function updateApiConfig(config: Partial<ApiConfig>): void {
-  Object.assign(API_CONFIG, config);
-  console.log('[StoryApiService] API configuration updated');
+export function updateApiConfig(config: Partial<ApiServiceConfig>): void {
+  Object.assign(apiConfig, config);
+  debugLog('API configuration updated', config);
 }
 
 /**
  * Get current API configuration
  */
-export function getApiConfig(): ApiConfig {
-  return { ...API_CONFIG };
+export function getApiConfig(): ApiServiceConfig {
+  return { ...apiConfig };
 }
+
+// Re-export types for external use
+export type { ApiServiceConfig };
 
 // Export for legacy compatibility and direct usage
 export const StoryApiService = {

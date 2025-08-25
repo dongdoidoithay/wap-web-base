@@ -295,7 +295,7 @@ export function ApiDataHandler({
                       </div>
                      
                       {story.sortDesc && (
-                        <p className="mt-1 text-sm text-body-secondary line-clamp-1">
+                        <p className="mt-1 text-sm text-body-secondary line-clamp-3">
                           {story.sortDesc}
                         </p>
                       )}

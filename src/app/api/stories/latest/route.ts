@@ -3,8 +3,8 @@ import { API_CONFIG, createFetchOptions, debugLog } from '@/lib/api-config';
 
 // Cache for API responses to reduce external API calls
 const cache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = API_CONFIG.CACHE_DURATION;
-const MAX_CACHE_ENTRIES = API_CONFIG.MAX_CACHE_ENTRIES;
+const CACHE_DURATION = API_CONFIG.CACHE.DEFAULT_TTL;
+const MAX_CACHE_ENTRIES = API_CONFIG.CACHE.MAX_ENTRIES;
 
 // Function to get cached data
 function getCachedData(key: string) {
@@ -66,11 +66,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch data from external API with optimized settings
-    const apiUrl = `${API_CONFIG.EXTERNAL_API_BASE_URL}/api/six-vn/HomeLastUpdate/${limit}/${page}`;
+    const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.STORY_API_PATH}/HomeLastUpdate/${limit}/${page}`;
     debugLog(`Calling external API: ${apiUrl}`);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.EXTERNAL_API_TIMEOUT);
+    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
     
     const fetchOptions = createFetchOptions(controller.signal);
     const fetchResponse = await fetch(apiUrl, fetchOptions);
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     
     if (error instanceof Error) {
       if (error.name === 'AbortError' || error.message.includes('timeout')) {
-        errorMessage = `API request timeout (${API_CONFIG.EXTERNAL_API_TIMEOUT}ms) - external server may be slow or unavailable`;
+        errorMessage = `API request timeout (${API_CONFIG.TIMEOUT}ms) - external server may be slow or unavailable`;
         statusCode = 504;
       } else if (error.message.includes('ECONNREFUSED') || error.message.includes('fetch failed')) {
         errorMessage = 'Cannot connect to external API server (localhost:9000) - please ensure it is running';
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
 // Optimized transform function (moved outside to reduce inline processing)
 function transformItem(item: any, index: number): any {
   return {
-    id: item.id || `item-${index}`,
+    id: item.idDoc || `item-${index}`,
     title: item.title || item.name || `Item ${index + 1}`,
     description: item.description || item.desc || '',
     image: item.image || item.thumbnail || '',

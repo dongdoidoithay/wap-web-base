@@ -1,32 +1,82 @@
-// API Configuration for performance optimization
+// Centralized API Configuration for all services
 export const API_CONFIG = {
-  // External API settings
-  EXTERNAL_API_BASE_URL: 'http://localhost:9000',
-  EXTERNAL_API_TIMEOUT: 3000, // 3 seconds
+  // Base API settings
+  BASE_URL: 'https://api.mangago.fit',
+  STORY_API_PATH: '/api/six-vn',
+  TIMEOUT: 3000, // 3 seconds
   
   // Cache settings
-  CACHE_DURATION: 2 * 60 * 1000, // 2 minutes
-  MAX_CACHE_ENTRIES: 50, // Maximum number of cached responses
+  CACHE: {
+    ENABLED: true,
+    DEFAULT_TTL: 5 * 60 * 1000, // 5 minutes (matching story service)
+    MAX_ENTRIES: 50,
+    STORY_CACHE_TTL: {
+      LATEST: 5 * 60 * 1000, // 5 minutes
+      TOP_FOLLOW: 10 * 60 * 1000, // 10 minutes
+      TOP_DAY: 60 * 60 * 1000, // 1 hour
+    },
+  },
   
   // Request optimization
   ENABLE_KEEP_ALIVE: true,
   ENABLE_CACHE_HEADERS: true,
+  ENABLE_COMPRESSION: true,
   
   // Error handling
   MAX_RETRIES: 1,
   RETRY_DELAY: 500, // 500ms
   
-  // Response optimization
-  ENABLE_COMPRESSION: true,
-  
   // Development settings
   ENABLE_DEBUG_LOGS: process.env.NODE_ENV === 'development',
+  
+  // Default headers
+  DEFAULT_HEADERS: {
+    'Content-Type': 'application/json',
+  } as Record<string, string>,
 } as const;
 
+// API Service Configuration Interface
+export interface ApiServiceConfig {
+  baseUrl: string;
+  timeout: number;
+  defaultHeaders: Record<string, string>;
+  cache: {
+    enabled: boolean;
+    defaultTtl: number;
+    maxEntries: number;
+  };
+}
+
+// Story API specific configuration
+export const STORY_API_CONFIG: ApiServiceConfig = {
+  baseUrl: `${API_CONFIG.BASE_URL}${API_CONFIG.STORY_API_PATH}`,
+  timeout: API_CONFIG.TIMEOUT,
+  defaultHeaders: API_CONFIG.DEFAULT_HEADERS,
+  cache: {
+    enabled: API_CONFIG.CACHE.ENABLED,
+    defaultTtl: API_CONFIG.CACHE.DEFAULT_TTL,
+    maxEntries: API_CONFIG.CACHE.MAX_ENTRIES,
+  },
+};
+
+// Get cache TTL for specific story endpoints
+export function getStoryCacheTtl(endpoint: 'latest' | 'topFollow' | 'topDay'): number {
+  switch (endpoint) {
+    case 'latest':
+      return API_CONFIG.CACHE.STORY_CACHE_TTL.LATEST;
+    case 'topFollow':
+      return API_CONFIG.CACHE.STORY_CACHE_TTL.TOP_FOLLOW;
+    case 'topDay':
+      return API_CONFIG.CACHE.STORY_CACHE_TTL.TOP_DAY;
+    default:
+      return API_CONFIG.CACHE.DEFAULT_TTL;
+  }
+}
+
 // Helper function to create optimized fetch options
-export function createFetchOptions(signal?: AbortSignal) {
+export function createFetchOptions(signal?: AbortSignal): RequestInit {
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    ...API_CONFIG.DEFAULT_HEADERS,
   };
   
   if (API_CONFIG.ENABLE_KEEP_ALIVE) {
@@ -50,7 +100,7 @@ export function createFetchOptions(signal?: AbortSignal) {
 }
 
 // Helper function for logging
-export function debugLog(message: string, ...args: any[]) {
+export function debugLog(message: string, ...args: any[]): void {
   if (API_CONFIG.ENABLE_DEBUG_LOGS) {
     console.log(`[API Debug] ${message}`, ...args);
   }
