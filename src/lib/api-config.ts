@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Base API settings
   BASE_URL: 'https://api.mangago.fit',
-  STORY_API_PATH: '/api/six-vn',
+  STORY_API_PATH: '/api/novel-vn',
   TIMEOUT: 5000, // Reduced to 5 seconds for faster failure detection
   
   // Cache settings
