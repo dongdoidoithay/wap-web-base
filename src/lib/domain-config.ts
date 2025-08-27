@@ -48,6 +48,11 @@ export interface DomainConfig {
     ogImage: string;
     twitterHandle?: string;
     googleAnalyticsId?: string;
+    googleVerification?: string;
+    bingVerification?: string;
+    yandexVerification?: string;
+    baiduVerification?: string;
+    naverVerification?: string;
     // Thêm template SEO
     template: {
       detail: string;    // Template cho trang chi tiết

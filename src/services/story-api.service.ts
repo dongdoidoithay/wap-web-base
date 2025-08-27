@@ -3,13 +3,12 @@
  * Handles all API data fetching, caching, and data transformation for story-related endpoints
  */
 
-import { API_CONFIG, STORY_API_CONFIG, getStoryCacheTtl, type ApiServiceConfig } from '../lib/api-config';
-import { createFetchOptions, debugLog } from '../lib/api-config';
+import { STORY_API_CONFIG, getStoryCacheTtl, type ApiServiceConfig } from '../lib/api-config';
 
 // API Interfaces
 export interface StoryItem {
   idDoc: string;
-  title: string;
+  name: string;
   sortDesc?: string;
   image?: string;
   thumbnail?: string;
@@ -33,11 +32,12 @@ export interface StoryItem {
 export interface ApiResponse<T> {
   data: T[];
   total?: number;
+  totalPage?: number;
   page?: number;
   limit?: number;
   success?: boolean;
   message?: string;
-  cacheStatus?: 'HIT' | 'MISS' | 'UNKNOWN';
+  cacheStatus?: 'HIT' | 'MISS' | 'UNKNOWN' | 'DISABLED';
   responseTime?: number;
 }
 
@@ -47,244 +47,172 @@ export interface CacheEntry<T> {
   expiresAt: number;
 }
 
+/**
+ * Retry helper function for API calls - Fixed AbortController reuse issue
+ */
+async function apiFetch(
+  url: string, 
+  baseOptions: Omit<RequestInit, 'signal'>, // Remove signal from base options
+  maxRetries: number = 2, 
+  retryDelay: number = 1000,
+  timeout: number = 8000
+): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Create a fresh AbortController for each attempt
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.warn(`[RetryFetch] ⏰ Request timeout after ${timeout}ms`);
+      controller.abort();
+    }, timeout);
+    
+    try {
+      if (attempt === 0) {
+        console.log(`[RetryFetch] 🎡 Initial request to ${url}`);
+      } else {
+        console.log(`[RetryFetch] 🔄 Retry attempt ${attempt}/${maxRetries} for ${url}`);
+      }
+      
+      // Create fresh fetch options with new signal
+      const fetchOptions: RequestInit = {
+        ...baseOptions,
+        signal: controller.signal
+      };
+      
+      const response = await fetch(url, fetchOptions);
+      console.log(`[RetryFetch] ✅ Request successful:`, response);
+      // Clear timeout on successful request
+      clearTimeout(timeoutId);
+      return response;
+     
+    } catch (error) {
+      // Clear timeout on error
+      clearTimeout(timeoutId);
+      const errorMsg = `${error}`;
+      console.warn(`[ERR] 🚨 HTTP Error`, errorMsg);
+      
+      // If this is the last attempt or a non-retryable error, throw
+      if (attempt === maxRetries) {
+        throw new Error(errorMsg);
+      }
+      
+      // Wait before retrying
+      if (attempt < maxRetries) {
+        console.log(`[RetryFetch] ⏳ Waiting ${retryDelay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+  }
+  
+  // This should never be reached, but TypeScript requires it
+  throw new Error('Maximum retries exceeded');
+}
+
 // Use centralized API configuration
 const apiConfig = STORY_API_CONFIG;
 
-// In-memory cache implementation
-class MemoryCache {
-  private cache = new Map<string, CacheEntry<any>>();
-  private maxEntries: number;
-
-  constructor(maxEntries: number = 50) {
-    this.maxEntries = maxEntries;
-  }
-
-  set<T>(key: string, data: T, ttl: number): void {
-    if (this.cache.size >= this.maxEntries) {
-      // Remove oldest entry (LRU-style cleanup)
-      const firstKey = this.cache.keys().next().value;
-      if (firstKey) {
-        this.cache.delete(firstKey);
-      }
-    }
-
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      expiresAt: Date.now() + ttl,
-    });
-  }
-
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.data;
-  }
-
-  has(key: string): boolean {
-    const entry = this.cache.get(key);
-    if (!entry) return false;
-
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return false;
-    }
-
-    return true;
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  getStats() {
-    return {
-      size: this.cache.size,
-      maxEntries: this.maxEntries,
-    };
-  }
-}
-
-// Global cache instance
-const apiCache = new MemoryCache(apiConfig.cache.maxEntries);
-
 /**
- * Maps raw API response data to StoryItem interface
+ * Transform function for API response items
  */
-function mapToStoryItem(item: any): StoryItem {
+function transformItem(item: any, index: number): any {
   return {
-    idDoc:item.idDoc,
-    title: item.name,
-    sortDesc:  item.sortDesc,
-    image: item.image,
-    thumbnail: item.thumbnail,
-    url: item.url,
-    slug: item.slug,
-    auth: item.auth,
-    authName: item.authName ,
-    genres:  item.genres,
-    genresName: item.genresName ,
-    status: item.status,
-    statusName: item.statusName,
-    views: item.views,
-    follows: item.follows,
-    chapters: item.dtaildocuments,
-    date: item.date ,
+    idDoc: item.idDoc,
+    name: item.name ,
+    sortDesc:item.sortDesc || '',
+    image: item.image || '',
+    thumbnail: item.image || '',
+    url: item.url  || '',
+    slug: item.slug || '',
+    auth: item.auth || '',
+    authName: item.authName || '',
+    genres: item.genres || '',
+    genresName: item.genresName || '',
+    status: item.status || '',
+    views: item.views || 0,
+    follows: item.follows || 0,
+    chapters: item.detail_documents || [],
+    lastChapter: item.detail_documents || [],
+    date: item.date|| new Date().toISOString()
   };
 }
 
 /**
- * Enhanced fetch function with timeout, compression, and error handling
+ * Client-side API call function - calls external API directly
  */
-async function enhancedFetch(
-  url: string,
-  options: RequestInit = {},
-  timeout: number = apiConfig.timeout
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+export async function clientApiCall<T>(
+  endpoint: string
+): Promise<ApiResponse<T>> {
+  const startTime = Date.now();
+  let cacheStatus: 'HIT' | 'MISS' | 'UNKNOWN' | 'DISABLED' = 'DISABLED';
 
   try {
-    const response = await fetch(url, {
-      ...options,
+    // Parse endpoint to extract parameters for external API
+    const url = new URL(endpoint, 'http://localhost'); // dummy base for URL parsing
+    const searchParams = url.searchParams;
+    const limit = parseInt(searchParams.get('limit') || '22', 10);
+    const page = parseInt(searchParams.get('page') || '0', 10);
+
+    // Validate parameters
+    if (limit < 1 || limit > 100) {
+      throw new Error('Limit must be between 1 and 100');
+    }
+
+    if (page < 0) {
+      throw new Error('Page must be 0 or greater');
+    }
+
+    // Build external API URL
+    const externalApiUrl = `${apiConfig.baseUrl}/HomeLastUpdate/${limit}/${page}`;
+    console.log(`[StoryApiService] Calling external API: ${externalApiUrl}`);
+
+    // Create fetch options with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), apiConfig.timeout);
+
+    const response = await fetch(externalApiUrl, {
+      method: 'GET',
       headers: {
-        ...apiConfig.defaultHeaders,
-        'Accept-Encoding': 'gzip, deflate, br',
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
         'Connection': 'keep-alive',
-        ...options.headers,
+        'Accept-Encoding': 'gzip, deflate, br'
       },
       signal: controller.signal,
+      cache: 'no-store'
     });
 
     clearTimeout(timeoutId);
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`Request timeout after ${timeout}ms`);
-    }
-    throw error;
-  }
-}
-
-/**
- * Generic API call function with caching support
- */
-async function apiCall<T>(
-  endpoint: string,
-  cacheKey: string,
-  cacheTtl: number = apiConfig.cache.defaultTtl,
-  useCache: boolean = apiConfig.cache.enabled
-): Promise<ApiResponse<T>> {
-  const startTime = Date.now();
-  let cacheStatus: 'HIT' | 'MISS' | 'UNKNOWN' = 'UNKNOWN';
-
-  // Check cache first
-  if (useCache && apiCache.has(cacheKey)) {
-    const cachedData = apiCache.get<ApiResponse<T>>(cacheKey);
-    if (cachedData) {
-      cacheStatus = 'HIT';
-      return {
-        ...cachedData,
-        cacheStatus,
-        responseTime: Date.now() - startTime,
-      };
-    }
-  }
-
-  try {
-    const url = `${apiConfig.baseUrl}${endpoint}`;
-    console.log(`[StoryApiService] Fetching: ${url}`);
-
-    const response = await enhancedFetch(url);
+    const responseTime = Date.now() - startTime;
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const rawData = await response.json();
-    cacheStatus = 'MISS';
+    console.log('[StoryApiService] External API response:', rawData);
 
-    // Transform data based on response structure
-    const mappedData = Array.isArray(rawData) 
-      ? rawData.map(mapToStoryItem)
-      : (rawData.data || []).map(mapToStoryItem);
+    // Transform the response data
+    const transformedData = Array.isArray(rawData) 
+      ? rawData.map(transformItem)
+      : rawData.data ? rawData.data.map(transformItem) : [];
 
-    const result: ApiResponse<T> = {
-      data: mappedData as T[],
-      total: rawData.total || rawData.length || mappedData.length,
+    const result = {
+      data: transformedData as T[],
+      total: rawData.totalRecode ,
+      totalPage: rawData.totalPage,
+      page: page,
+      limit: limit,
       success: true,
-      cacheStatus,
-      responseTime: Date.now() - startTime,
-    };
-
-    // Cache the result
-    if (useCache) {
-      apiCache.set(cacheKey, result, cacheTtl);
-    }
-
-    console.log(`[StoryApiService] Success: ${url}, Time: ${result.responseTime}ms, Cache: ${cacheStatus}`);
-    return result;
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`[StoryApiService] Error fetching ${endpoint}:`, errorMessage);
-
-    return {
-      data: [],
-      total: 0,
-      success: false,
-      message: errorMessage,
-      cacheStatus,
-      responseTime: Date.now() - startTime,
-    };
-  }
-}
-
-/**
- * Client-side API call function (for components)
- */
-export async function clientApiCall<T>(
-  endpoint: string,
-  cacheKey: string,
-  useCache: boolean = true
-): Promise<ApiResponse<T>> {
-  const startTime = Date.now();
-  let cacheStatus: 'HIT' | 'MISS' | 'UNKNOWN' = 'UNKNOWN';
-
-  try {
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: useCache ? 'default' : 'no-store',
-    });
-
-    const responseTime = Date.now() - startTime;
-    cacheStatus = response.headers.get('X-API-Cache') as any || 'UNKNOWN';
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    
-    return {
-      ...result,
       cacheStatus,
       responseTime,
     };
 
+    console.log(`[StoryApiService] Success: ${externalApiUrl}, Time: ${responseTime}ms, Items: ${transformedData.length}`);
+    return result;
+
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`[StoryApiService] Client error:`, errorMessage);
+    console.error(`[StoryApiService] External API error:`, errorMessage);
 
     return {
       data: [],
@@ -300,82 +228,212 @@ export async function clientApiCall<T>(
 // Story API Service Functions
 
 /**
- * Fetch latest updated stories with pagination
+ * Fetch latest updated stories with pagination - calls external API directly with retry mechanism
  */
 export async function fetchLatestStories(
   limit: number = 22, 
-  page: number = 0,
-  useCache: boolean = true
-): Promise<ApiResponse<StoryItem>> {
-  const cacheKey = `latest-stories-${limit}-${page}`;
-  return apiCall<StoryItem>(
-    `/HomeLastUpdate/${limit}/${page}`,
-    cacheKey,
-    getStoryCacheTtl('latest'),
-    useCache
-  );
+  page: number = 0
+) {
+  const startTime = Date.now();
+  
+  try {
+    const externalApiUrl = `${apiConfig.baseUrl}/HomeLastUpdate/${limit}/${page}`;
+    console.log(`[StoryApiService] 🚀 Starting latest stories request (limit: ${limit}, page: ${page})`);
+    console.log(`[StoryApiService] 🌐 Request URL: ${externalApiUrl}`);
+    console.log(`[StoryApiService] ⚙️ Config: timeout=${apiConfig.timeout}ms, baseUrl=${apiConfig.baseUrl}`);
+    
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (compatible; StoryReader/1.0)'
+      },
+      cache: 'no-store' as RequestCache
+    };
+    
+    // Use retry mechanism with built-in timeout handling (1 retry for faster response)
+    const response = await apiFetch(externalApiUrl, fetchOptions, 1, 1000, apiConfig.timeout);
+    
+    const rawData = await response.json();
+    const transformedData = Array.isArray(rawData) 
+      ? rawData.map(transformItem)
+      : rawData.data ? rawData.data.map(transformItem) : [];
+    
+    const responseTime = Date.now() - startTime;
+    console.log(`[StoryApiService] ✅ Latest stories API completed successfully in ${responseTime}ms (${transformedData.length} items)`);
+    
+    return {
+      data: transformedData,
+      total: rawData.totalRecode,
+      totalPage: rawData.totalPage,
+      page: page,
+      limit: limit,
+      success: true,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Enhanced logging with structured error information
+    console.error(`[StoryApiService] ❌ Latest stories failed after ${responseTime}ms:`, {
+      error: errorMessage,
+      requestUrl: `${apiConfig.baseUrl}/HomeLastUpdate/${limit}/${page}`,
+      apiConfig: {
+        baseUrl: apiConfig.baseUrl,
+        timeout: apiConfig.timeout,
+        requestParams: { limit, page }
+      }
+    });
+    
+    return {
+      data: [],
+      total: 0,
+      totalPage: 0,
+      page: page,
+      limit: limit,
+      success: false,
+      message: errorMessage,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+  }
 }
 
 /**
- * Fetch top followed stories
+ * Fetch top followed stories - calls external API directly with retry mechanism
  */
 export async function fetchTopFollowStories(
   limit: number = 10, 
-  page: number = 0,
-  useCache: boolean = true
-): Promise<ApiResponse<StoryItem>> {
-  const cacheKey = `top-follow-stories-${limit}-${page}`;
-  return apiCall<StoryItem>(
-    `/HomeTopFllow/${limit}/${page}`,
-    cacheKey,
-    getStoryCacheTtl('topFollow'),
-    useCache
-  );
+  page: number = 0
+) {
+  const startTime = Date.now();
+  
+  try {
+    const externalApiUrl = `${apiConfig.baseUrl}/HomeTopFllow/${limit}/${page}`;
+    console.log(`[StoryApiService] 🚀 Starting top follow stories request (limit: ${limit})`);
+    
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (compatible; StoryReader/1.0)'
+      },
+      cache: 'no-store' as RequestCache
+    };
+    
+    // Use retry mechanism with built-in timeout handling (1 retry for faster response)  
+    const response = await apiFetch(externalApiUrl, fetchOptions, 1, 1000, apiConfig.timeout);
+    
+    const rawData = await response.json();
+    const transformedData = Array.isArray(rawData) 
+      ? rawData.map(transformItem)
+      : rawData.data ? rawData.data.map(transformItem) : [];
+    
+    const responseTime = Date.now() - startTime;
+    console.log(`[StoryApiService] ✅ Top follow stories API completed successfully in ${responseTime}ms (${transformedData.length} items)`);
+    
+    return {
+      data: transformedData,
+      total: rawData.totalRecode ,
+      totalPage: rawData.totalPage ,
+      page: page,
+      limit: limit,
+      success: true,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const responseTime = Date.now() - startTime;
+    
+    console.error(`[StoryApiService] ❌ Top follow stories failed after ${responseTime}ms:`, {
+      error: errorMessage,
+      url: `${apiConfig.baseUrl}/HomeTopFllow/${limit}/${page}`,
+      timeout: apiConfig.timeout
+    });
+    
+    return {
+      data: [],
+      total: 0,
+      totalPage: 0,
+      page: page,
+      limit: limit,
+      success: false,
+      message: errorMessage,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+  }
 }
 
 /**
- * Fetch top daily stories
+ * Fetch top daily stories - calls external API directly with retry mechanism
  */
 export async function fetchTopDayStories(
-  limit: number = 100,
-  useCache: boolean = true
-): Promise<ApiResponse<StoryItem>> {
-  const cacheKey = `top-day-stories-${limit}`;
-  return apiCall<StoryItem>(
-    `/HomeTopDay/${limit}`,
-    cacheKey,
-    getStoryCacheTtl('topDay'),
-    useCache
-  );
-}
-
-// Cache management functions
-
-/**
- * Clear all cached data
- */
-export function clearCache(): void {
-  apiCache.clear();
-  console.log('[StoryApiService] Cache cleared');
-}
-
-/**
- * Get cache statistics
- */
-export function getCacheStats() {
-  return apiCache.getStats();
-}
-
-/**
- * Force refresh data by clearing specific cache entries
- */
-export function invalidateCache(pattern?: string): void {
-  if (pattern) {
-    // Clear specific cache entries matching pattern
-    // This would require implementing pattern matching
-    console.log(`[StoryApiService] Invalidating cache entries matching: ${pattern}`);
-  } else {
-    clearCache();
+  limit: number = 100
+) {
+  const startTime = Date.now();
+  
+  try {
+    const externalApiUrl = `${apiConfig.baseUrl}/HomeTopDay/${limit}`;
+    console.log(`[StoryApiService] 🚀 Starting top day stories request (limit: ${limit})`);
+    
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (compatible; StoryReader/1.0)'
+      },
+      cache: 'no-store' as RequestCache
+    };
+    
+    // Use retry mechanism with built-in timeout handling (1 retry for faster response)
+    const response = await apiFetch(externalApiUrl, fetchOptions, 1, 1000, apiConfig.timeout);
+    
+    const rawData = await response.json();
+    const transformedData = Array.isArray(rawData) 
+      ? rawData.map(transformItem)
+      : rawData.data ? rawData.data.map(transformItem) : [];
+    
+    const responseTime = Date.now() - startTime;
+    console.log(`[StoryApiService] ✅ Top day stories API completed successfully in ${responseTime}ms (${transformedData.length} items)`);
+    
+    return {
+      data: transformedData,
+      totalPage: rawData.totalPage,
+      success: true,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const responseTime = Date.now() - startTime;
+    
+    console.error(`[StoryApiService] ❌ Top day stories failed after ${responseTime}ms:`, {
+      error: errorMessage,
+      url: `${apiConfig.baseUrl}/HomeTopDay/${limit}`,
+      timeout: apiConfig.timeout
+    });
+    
+    return {
+      data: [],
+      totalPage: 0,
+      success: false,
+      message: errorMessage,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
   }
 }
 
@@ -386,7 +444,7 @@ export function invalidateCache(pattern?: string): void {
  */
 export function updateApiConfig(config: Partial<ApiServiceConfig>): void {
   Object.assign(apiConfig, config);
-  debugLog('API configuration updated', config);
+  console.log('API configuration updated', config);
 }
 
 /**
@@ -405,9 +463,6 @@ export const StoryApiService = {
   fetchTopFollowStories,
   fetchTopDayStories,
   clientApiCall,
-  clearCache,
-  getCacheStats,
-  invalidateCache,
   updateApiConfig,
   getApiConfig,
 };

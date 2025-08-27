@@ -3,7 +3,7 @@ export const API_CONFIG = {
   // Base API settings
   BASE_URL: 'https://api.mangago.fit',
   STORY_API_PATH: '/api/six-vn',
-  TIMEOUT: 3000, // 3 seconds
+  TIMEOUT: 5000, // Reduced to 5 seconds for faster failure detection
   
   // Cache settings
   CACHE: {
@@ -22,9 +22,9 @@ export const API_CONFIG = {
   ENABLE_CACHE_HEADERS: true,
   ENABLE_COMPRESSION: true,
   
-  // Error handling
-  MAX_RETRIES: 1,
-  RETRY_DELAY: 500, // 500ms
+  // Error handling - Enhanced retry mechanism
+  MAX_RETRIES: 2, // Increased retries for better reliability
+  RETRY_DELAY: 1000, // Increased to 1 second for external API
   
   // Development settings
   ENABLE_DEBUG_LOGS: process.env.NODE_ENV === 'development',

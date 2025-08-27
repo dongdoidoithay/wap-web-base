@@ -1,258 +1,566 @@
-import Image from "next/image";
-import React from "react";
-import Link from "next/link";
-import { headers } from 'next/headers';
-import { getDomainConfigSync } from '@/lib/domain-config';
+'use client';
+
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { StoryListSkeleton } from '@/components/loading-skeleton';
 import { SEOHead } from '@/components/seo-head';
-import { CacheDebug } from '@/components/cache-debug';
-import { ClientOnly } from '@/components/client-only';
-import { ApiDataHandler } from '@/components/api-data-handler';
 import { ApiErrorBoundary } from '@/components/api-error-boundary';
 
-// Import API interfaces and services
+// UI Components
 import { 
-  StoryItem, 
-  ApiResponse,
-  fetchLatestStories,
-  fetchTopFollowStories,
-  fetchTopDayStories
+  Header, 
+  SearchBar, 
+  CategoryChips, 
+  FooterNav,
+  StorySection,
+  StoryList,
+  StoryGrid,
+  StoryRanking,
+  SectionControls,
+  Pagination
+} from '@/components/ui';
+
+// Hooks and Services
+import { useDomain } from '@/hooks/use-domain';
+import { 
+  fetchLatestStories, 
+  fetchTopFollowStories, 
+  fetchTopDayStories 
 } from '@/services/story-api.service';
+import { 
+  parsePageFromSearchParams, 
+  generateStructuredData 
+} from '@/services/home-data-optimized.service';
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
+// Types
+import type { HomePageProps } from '@/types';
+import type { StoryItem } from '@/types';
 
-// API Data Fetching Functions
-// Utility function to calculate pagination info
-function calculatePagination(currentPage: number, totalItems: number, itemsPerPage: number): PaginationInfo {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
-  return {
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage,
-    hasNext: currentPage < totalPages - 1,
-    hasPrev: currentPage > 0
+// Progressive Data Types (inline)
+interface ProgressiveHomeData {
+  latestStories: {
+    data: StoryItem[];
+    total: number;
+    loading: boolean;
+    error: string | null;
+    responseTime?: number;
+  };
+  topFollowStories: {
+    data: StoryItem[];
+    loading: boolean;
+    error: string | null;
+    responseTime?: number;
+  };
+  topDayStories: {
+    data: StoryItem[];
+    loading: boolean;
+    error: string | null;
+    responseTime?: number;
+  };
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
   };
 }
 
+/**
+ * Home Page Component with Progressive Data Loading
+ * Features:
+ * 1. Domain-based configuration loading
+ * 2. Progressive data loading - renders each section as API completes
+ * 3. Independent section loading and error handling
+ * 4. SEO optimization with structured data
+ */
+export default function Home({ searchParams }: HomePageProps) {
+  // ========================
+  // 1. DOMAIN CONFIGURATION
+  // ========================
+  const domainConfig = useDomain();
+  const isConfigLoading = !domainConfig;
 
-function Header({ config }: { config: any }) {
-  return (
-    <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur supports-[backdrop-filter]:bg-surface/60 border-b border-light">
-      <div className="mx-auto max-w-screen-sm px-3 py-2 flex items-center justify-between">
-        <Link href="/" aria-label="Trang chủ" className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-light shadow-sm bg-surface">
-            {config.logo}
-          </span>
-          <span className="font-semibold tracking-tight text-body-primary">{config.name}</span>
-        </Link>
-        <nav className="flex items-center gap-2">
-          <Link href="/chuyen-muc" className="text-sm text-body-secondary hover:text-primary transition-colors">Chuyên mục</Link>
-          <Link href="/ve-chung-toi" className="text-sm text-body-secondary hover:text-primary transition-colors">About</Link>
-        </nav>
+  // ========================
+  // 2. SEARCH PARAMS RESOLUTION
+  // ========================
+  const [resolvedParams, setResolvedParams] = useState<{ page?: string } | null>(null);
+  const [showImages, setShowImages] = useState(false);
+
+  // Constants
+  const ITEMS_PER_PAGE = 22;
+
+  // Parse page from search params
+  const currentPageFromParams = useMemo(() => {
+    if (!resolvedParams) return 0;
+    return parsePageFromSearchParams(resolvedParams);
+  }, [resolvedParams]);
+
+  // ========================
+  // 3. PROGRESSIVE DATA LOADING - Direct Implementation
+  // ========================
+  
+  // Progressive data state
+  const [progressiveData, setProgressiveData] = useState<ProgressiveHomeData>({
+    latestStories: {
+      data: [],
+      total: 0,
+      loading: false,
+      error: null
+    },
+    topFollowStories: {
+      data: [],
+      loading: false,
+      error: null
+    },
+    topDayStories: {
+      data: [],
+      loading: false,
+      error: null
+    },
+    pagination: {
+      currentPage: 0,
+      totalPages: 0,
+      totalItems: 0
+    }
+  });
+  
+  // Progressive data fetcher reference (replaced with AbortController)
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Constants
+  const LATEST_LIMIT = ITEMS_PER_PAGE;
+  const TOP_FOLLOW_LIMIT = 10;
+  const TOP_DAY_LIMIT = 15;
+  
+  // ========================
+  // DIRECT FETCH IMPLEMENTATION - Single fetch for all APIs
+  // ========================
+  
+  // Fetch all data once - optimized for performance
+  const fetchAllData = useCallback(async (page = 0) => {
+    // Cancel any existing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    
+    console.log('🚀 Starting optimized data fetch for all sections...');
+    
+    // Set all loading states to true
+    setProgressiveData(prev => ({
+      ...prev,
+      latestStories: { ...prev.latestStories, loading: true, error: null },
+      topFollowStories: { ...prev.topFollowStories, loading: true, error: null },
+      topDayStories: { ...prev.topDayStories, loading: true, error: null },
+      pagination: { ...prev.pagination, currentPage: page }
+    }));
+    
+    // Fetch all APIs in parallel - single Promise.allSettled call
+    try {
+      const [latestResult, topFollowResult, topDayResult] = await Promise.allSettled([
+        fetchLatestStories(LATEST_LIMIT, page),
+        fetchTopFollowStories(TOP_FOLLOW_LIMIT, 0),
+        fetchTopDayStories(TOP_DAY_LIMIT)
+      ]);
+      
+      // Process results and update state in one batch
+      setProgressiveData(prev => {
+        const newState = { ...prev };
+        
+        // Update latest stories
+        if (latestResult.status === 'fulfilled') {
+          newState.latestStories = {
+            data: latestResult.value.data || [],
+            total: latestResult.value.total || 0,
+            loading: false,
+            error: null,
+            responseTime: latestResult.value.responseTime
+          };
+          newState.pagination = {
+            currentPage: page,
+            totalPages: latestResult.value.totalPage || 0,
+            totalItems: latestResult.value.total || 0
+          };
+        } else {
+          newState.latestStories = {
+            ...prev.latestStories,
+            loading: false,
+            error: `Lỗi tải truyện mới: ${latestResult.reason?.message || 'Unknown error'}`
+          };
+        }
+        
+        // Update top follow stories
+        if (topFollowResult.status === 'fulfilled') {
+          newState.topFollowStories = {
+            data: topFollowResult.value.data || [],
+            loading: false,
+            error: null,
+            responseTime: topFollowResult.value.responseTime
+          };
+        } else {
+          newState.topFollowStories = {
+            ...prev.topFollowStories,
+            loading: false,
+            error: `Lỗi tải top follow: ${topFollowResult.reason?.message || 'Unknown error'}`
+          };
+        }
+        
+        // Update top day stories
+        if (topDayResult.status === 'fulfilled') {
+          newState.topDayStories = {
+            data: topDayResult.value.data || [],
+            loading: false,
+            error: null,
+            responseTime: topDayResult.value.responseTime
+          };
+        } else {
+          newState.topDayStories = {
+            ...prev.topDayStories,
+            loading: false,
+            error: `Lỗi tải top ngày: ${topDayResult.reason?.message || 'Unknown error'}`
+          };
+        }
+        
+        return newState;
+      });
+      
+      console.log('✅ All APIs completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Error in fetchAllData:', error);
+      // Set all to error state
+      setProgressiveData(prev => ({
+        ...prev,
+        latestStories: { ...prev.latestStories, loading: false, error: 'Lỗi kết nối mạng' },
+        topFollowStories: { ...prev.topFollowStories, loading: false, error: 'Lỗi kết nối mạng' },
+        topDayStories: { ...prev.topDayStories, loading: false, error: 'Lỗi kết nối mạng' }
+      }));
+    }
+  }, []); // Empty dependency array since function doesn't depend on any state or props
+  
+  // Page change handler - direct implementation
+  const handlePageChange = useCallback((newPage: number) => {
+    fetchAllData(newPage);
+  }, [fetchAllData]);
+  
+  // Section refresh handler - direct implementation
+  const handleRefreshSection = useCallback((section: 'latest' | 'topFollow' | 'topDay') => {
+    const currentPage = progressiveData.pagination.currentPage;
+    
+    if (section === 'latest') {
+      fetchAllData(currentPage);
+    } else {
+      fetchAllData(currentPage); // Refresh all for consistency
+    }
+  }, [fetchAllData, progressiveData.pagination.currentPage]);
+  
+  // Cancel fetch function
+  const cancelFetch = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  }, []);
+  
+  // Computed loading states for UI - memoized to prevent re-renders
+  const isAnyLoading = useMemo(() => 
+    progressiveData.latestStories.loading || 
+    progressiveData.topFollowStories.loading || 
+    progressiveData.topDayStories.loading,
+    [progressiveData.latestStories.loading, progressiveData.topFollowStories.loading, progressiveData.topDayStories.loading]
+  );
+                       
+  const allCompleted = useMemo(() => 
+    !progressiveData.latestStories.loading && 
+    !progressiveData.topFollowStories.loading && 
+    !progressiveData.topDayStories.loading &&
+    (progressiveData.latestStories.data.length > 0 ||
+     progressiveData.topFollowStories.data.length > 0 ||
+     progressiveData.topDayStories.data.length > 0),
+    [
+      progressiveData.latestStories.loading,
+      progressiveData.topFollowStories.loading, 
+      progressiveData.topDayStories.loading,
+      progressiveData.latestStories.data.length,
+      progressiveData.topFollowStories.data.length,
+      progressiveData.topDayStories.data.length
+    ]
+  );
+                        
+  const hasAnyError = useMemo(() => 
+    !!progressiveData.latestStories.error || 
+    !!progressiveData.topFollowStories.error || 
+    !!progressiveData.topDayStories.error,
+    [
+      progressiveData.latestStories.error,
+      progressiveData.topFollowStories.error,
+      progressiveData.topDayStories.error
+    ]
+  );
+       
+  // ========================
+  // 4. EVENT HANDLERS
+  // ===========
+  // ========================
+  // 5. SEO OPTIMIZATION
+  // ========================
+  
+  const seoData = useMemo(() => {
+    if (!domainConfig) {
+      return {
+        siteLd: {},
+        breadcrumbLd: {},
+        title: 'Loading...',
+        description: 'Loading content...',
+        canonical: ''
+      };
+    }
+    
+    const { siteLd, breadcrumbLd } = generateStructuredData(domainConfig);
+    
+    return {
+      siteLd,
+      breadcrumbLd,
+      title: domainConfig.seo?.title || domainConfig.name || 'Home',
+      description: domainConfig.seo?.description || domainConfig.description || '',
+      canonical: `https://${domainConfig.domain}`
+    };
+  }, [domainConfig]);
+
+  // ========================
+  // 6. EFFECTS
+  // ========================
+  
+  // Resolve search params
+  useEffect(() => {
+    let isMounted = true;
+    const resolveParams = async () => {
+      try {
+        const params = await searchParams;
+        if (isMounted) {
+          setResolvedParams(params || {});
+        }
+      } catch (error) {
+        console.error('Error resolving search params:', error);
+        if (isMounted) {
+          setResolvedParams({});
+        }
+      }
+    };
+    resolveParams();
+    return () => { isMounted = false; };
+  }, [searchParams]);
+
+  // Start data loading when config and params are ready
+  useEffect(() => {
+    console.log('Starting data loading...',currentPageFromParams);
+      fetchAllData(currentPageFromParams);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cancelFetch();
+    };
+  }, [cancelFetch]);
+
+  // ========================
+  // 7. LOADING STATE
+  // ========================
+  
+  if (isConfigLoading || !domainConfig || resolvedParams === null) {
+    return (
+      <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-muted">Đang tải cấu hình...</div>
+        </div>
       </div>
-    </header>
-  );
-}
-
-function SearchBar() {
-  return (
-    <form
-      action="/search"
-      method="GET"
-      className="mx-auto max-w-screen-sm px-3 pt-3"
-      role="search"
-      aria-label="Tìm kiếm nội dung"
-    >
-      <label htmlFor="q" className="sr-only">
-        Tìm kiếm
-      </label>
-      <div className="flex items-center gap-2 rounded-2xl border border-light bg-surface px-3 py-2 shadow-sm">
-        <input
-          id="q"
-          name="q"
-          type="search"
-          placeholder="Tìm bài viết, chủ đề..."
-          className="w-full bg-transparent outline-none placeholder:text-muted text-sm text-body-primary"
-          autoComplete="off"
-          minLength={2}
-        />
-        <button
-          type="submit"
-          className="rounded-xl px-3 py-1.5 text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
-        >
-          Tìm
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function CategoryChips({ categories }: { categories: string[] }) {
-  return (
-    <div className="mx-auto max-w-screen-sm px-3 py-2 overflow-x-auto">
-      <ul className="flex gap-2 whitespace-nowrap">
-        {categories.map((c) => (
-          <li key={c}>
-            <Link
-              href={`/chuyen-muc/${encodeURIComponent(c)}`}
-              className="inline-flex items-center rounded-full border border-primary/20 px-3 py-1.5 text-sm hover:bg-primary/10 text-primary transition-colors"
-            >
-              {c}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-
-function FooterNav() {
-  return (
-    <nav
-      className="sticky bottom-0 z-50 mt-4 border-t border-light bg-surface/95 backdrop-blur"
-      aria-label="Điều hướng dưới cùng"
-    >
-      <ul className="mx-auto flex max-w-screen-sm items-stretch justify-between px-6 py-2 text-xs">
-        {[
-          { label: "Trang chủ", href: "/", emoji: "🏠" },
-          { label: "Danh mục", href: "/chuyen-muc", emoji: "🗂️" },
-          { label: "Tìm kiếm", href: "/search", emoji: "🔎" },
-          { label: "Tài khoản", href: "/tai-khoan", emoji: "👤" },
-        ].map((i) => (
-          <li key={i.href}>
-            <Link
-              href={i.href}
-              className="flex flex-col items-center rounded-xl px-3 py-1.5 hover:bg-primary/10 transition-colors"
-            >
-              <span aria-hidden>{i.emoji}</span>
-              <span className="mt-0.5 text-[11px] text-body-secondary">{i.label}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-
-export default async function Home({ searchParams }: { searchParams?: Promise<{ page?: string }> }) {
-  const headersList = await headers();
-  const hostname = headersList.get('host') || '';
-  
-  // Await searchParams before accessing its properties
-  const resolvedSearchParams = await searchParams;
-  console.log('hostname', resolvedSearchParams?.page);
-  
-  // Get current page from search params
-  let currentPage = 0;
-  if (resolvedSearchParams != null && resolvedSearchParams?.page != null)
-    currentPage = parseInt(resolvedSearchParams?.page || '0', 10);
-  
-  // Load domain config
-  let config;
-  if (process.env.NODE_ENV === 'development') {
-    const { getDomainConfig } = await import('@/lib/domain-config');
-    config = await getDomainConfig(hostname);
-  } else {
-    config = getDomainConfigSync(hostname);
+    );
   }
 
-  // Fetch API data in parallel
-  const [latestStoriesResponse, topFollowResponse, topDayResponse] = await Promise.allSettled([
-    fetchLatestStories(22, currentPage),
-    fetchTopFollowStories(10, 0),
-    fetchTopDayStories(100)
-  ]);
-
-  // Extract data from responses
-  const latestStories = latestStoriesResponse.status === 'fulfilled' ? latestStoriesResponse.value : { data: [], total: 0, page: currentPage, limit: 22 };
-  const topFollowStories = topFollowResponse.status === 'fulfilled' ? topFollowResponse.value.data : [];
-  const topDayStories = topDayResponse.status === 'fulfilled' ? topDayResponse.value.data : [];
-
-  // Calculate pagination for latest stories
-  const pagination = calculatePagination(currentPage, latestStories.total || 0, 22);
-
-  const siteLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: config.name,
-    url: `https://${config.domain}`,
-    description: config.description,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `https://${config.domain}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
-  };
-
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Trang chủ",
-        item: `https://${config.domain}/`,
-      },
-    ],
-  };
-
+  // ========================
+  // 8. PROGRESSIVE RENDER
+  // ========================
+  
   return (
     <>
-      <SEOHead />
+      {/* SEO HEAD */}
+      <SEOHead 
+        title={seoData.title}
+        description={seoData.description}
+        canonical={seoData.canonical}
+      />
       
-      {/* Add JSON-LD structured data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
-      />
+      {/* STRUCTURED DATA FOR SEO */}
+      {Object.keys(seoData.siteLd).length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(seoData.siteLd) }}
+        />
+      )}
+      {Object.keys(seoData.breadcrumbLd).length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(seoData.breadcrumbLd) }}
+        />
+      )}
       
       <div className="min-h-dvh bg-background text-body-primary">
-        <Header config={config} />
+        {/* HEADER */}
+        <Header config={domainConfig} />
+        
         <main>
+          {/* SEARCH SECTION */}
           <SearchBar />
-          <CategoryChips categories={config.content.categories} />
           
-          {/* API Data Handler with enhanced client-side functionality */}
-          <ClientOnly fallback={
-            <div className="mx-auto max-w-screen-sm px-3 py-8 text-center">
-              <div className="text-muted">Đang tải dữ liệu...</div>
+          {/* CATEGORIES */}
+          <CategoryChips categories={domainConfig.content?.categories || []} />
+          
+          {/* MAIN CONTENT - PROGRESSIVE RENDERING */}
+          <ApiErrorBoundary>
+            <div className="space-y-6">
+              
+              {/* LATEST STORIES SECTION - Renders immediately when loaded */}
+              <StorySection
+                title="🔥 Truyện Mới Cập Nhật"
+                error={progressiveData.latestStories.error}
+                                  actions={
+                    <button
+                      onClick={() => handleRefreshSection('latest')}
+                      disabled={progressiveData.latestStories.loading}
+                      className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 disabled:opacity-50"
+                    >
+                      {progressiveData.latestStories.loading ? '⏳' : '🔄'}
+                    </button>
+                  }
+              >
+                {progressiveData.latestStories.loading && (
+                  <StoryListSkeleton count={ITEMS_PER_PAGE} />
+                )}
+                
+                {!progressiveData.latestStories.loading && progressiveData.latestStories.data.length > 0 && (
+                  <>
+                    <StoryList
+                      stories={progressiveData.latestStories.data}
+                      showImages={showImages}
+                      loading={false}
+                    />
+                    
+                    <Pagination
+                      currentPage={progressiveData.pagination.currentPage}
+                      totalPages={progressiveData.pagination.totalPages}
+                      loading={progressiveData.latestStories.loading}
+                      onPageChange={handlePageChange}
+                    />
+                  </>
+                )}
+
+                {!progressiveData.latestStories.loading && progressiveData.latestStories.data.length === 0 && !progressiveData.latestStories.error && (
+                  <div className="text-center py-8 text-muted">
+                    <p>Không có truyện nào được tìm thấy</p>
+                  </div>
+                )}
+              </StorySection>
+
+              {/* TOP FOLLOW STORIES - Renders when loaded, independent of other sections */}
+              {(progressiveData.topFollowStories.data.length > 0 || progressiveData.topFollowStories.loading) && (
+                <StorySection 
+                  title="🏆 Top Truyện Được Theo Dõi Nhiều"
+                  error={progressiveData.topFollowStories.error}
+                  actions={
+                    <button
+                      onClick={() => handleRefreshSection('topFollow')}
+                      disabled={progressiveData.topFollowStories.loading}
+                      className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 disabled:opacity-50"
+                    >
+                      {progressiveData.topFollowStories.loading ? '⏳' : '🔄'}
+                    </button>
+                  }
+                >
+                  {progressiveData.topFollowStories.loading ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {Array.from({ length: 10 }, (_, i) => (
+                        <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+                      ))}
+                    </div>
+                  ) : (
+                    <StoryGrid
+                      stories={progressiveData.topFollowStories.data}
+                      maxItems={10}
+                      columns={2}
+                    />
+                  )}
+                </StorySection>
+              )}
+
+              {/* TOP DAY STORIES - Renders when loaded, independent of other sections */}
+              {(progressiveData.topDayStories.data.length > 0 || progressiveData.topDayStories.loading) && (
+                <StorySection 
+                  title="🔥 Top Xem Trong Ngày"
+                  error={progressiveData.topDayStories.error}
+                  actions={
+                    <button
+                      onClick={() => handleRefreshSection('topDay')}
+                      disabled={progressiveData.topDayStories.loading}
+                      className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 disabled:opacity-50"
+                    >
+                      {progressiveData.topDayStories.loading ? '⏳' : '🔄'}
+                    </button>
+                  }
+                >
+                  {progressiveData.topDayStories.loading ? (
+                    <div className="space-y-2">
+                      {Array.from({ length: 15 }, (_, i) => (
+                        <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />
+                      ))}
+                    </div>
+                  ) : (
+                    <StoryRanking
+                      stories={progressiveData.topDayStories.data}
+                      maxItems={15}
+                    />
+                  )}
+                </StorySection>
+              )}
+
+              {/* LOADING INDICATOR - Shows overall progress */}
+              {isAnyLoading && (
+                <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">Đang tải dữ liệu...</span>
+                  </div>
+                </div>
+              )}
+
+              {/* SUCCESS INDICATOR - Shows when all loading is complete */}
+              {allCompleted && !hasAnyError && (
+                <div className="fixed bottom-4 right-4 bg-success text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in-out">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">✅ Tải hoàn tất!</span>
+                  </div>
+                </div>
+              )}
             </div>
-          }>
-            <ApiErrorBoundary>
-              <ApiDataHandler
-                initialLatestStories={latestStories.data}
-                initialTopFollow={topFollowStories}
-                initialTopDay={topDayStories}
-                initialPage={currentPage}
-                initialTotal={latestStories.total || 0}
-              />
-            </ApiErrorBoundary>
-          </ClientOnly>
-          
-         
+          </ApiErrorBoundary>
         </main>
+        
+        {/* FOOTER */}
         <FooterNav />
       </div>
-      
-      {/* Cache Debug Component - chỉ hiển thị trong development */}
-      <ClientOnly>
-        <CacheDebug hostname={hostname} config={config} />
-      </ClientOnly>
+
+      {/* STYLES FOR ANIMATIONS */}
+      <style jsx>{`
+        @keyframes fade-in-out {
+          0% { opacity: 0; transform: translateY(10px); }
+          20% { opacity: 1; transform: translateY(0); }
+          80% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-10px); }
+        }
+        .animate-fade-in-out {
+          animation: fade-in-out 3s ease-in-out forwards;
+        }
+      `}</style>
     </>
   );
 }
-
