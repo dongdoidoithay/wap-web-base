@@ -1,7 +1,7 @@
 {
   "example.com": {
     "domain": "example.com",
-    "name": "Website Name",
+    "name": "test name",
     "description": "Website description here",
     "logo": "🏷️",
     "theme": {

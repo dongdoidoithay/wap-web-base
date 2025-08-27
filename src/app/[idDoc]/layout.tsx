@@ -1,16 +1,18 @@
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
-import { getDomainConfigSync } from '../../lib/domain-config';
-import { fetchStoryDetailDev } from '../../services/story-detail.service';
+import { getDomainConfigSync } from '@/lib/domain-config';
+import { getCachedStoryDetail } from '@/lib/cached-story-detail';
+import { fetchStoryDetail } from '@/services/story-detail.service';
 
-interface StoryInfoLayoutProps {
+interface ChapterReadingLayoutProps {
   params: Promise<{
     idDoc: string;
+    IdDetail: string;
   }>;
   children: React.ReactNode;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ idDoc: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ idDoc: string; idDetail: string }> }): Promise<Metadata> {
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
   const config = getDomainConfigSync(hostname);
@@ -19,75 +21,135 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
   const resolvedParams = await params;
 
   try {
-    const storyResult = await fetchStoryDetailDev(resolvedParams.idDoc);
-    const story = storyResult.success ? storyResult.data : null;
-    
-    if (!story) {
-      return {
-        title: `Không tìm thấy truyện | ${config.name}`,
-        description: 'Truyện không tồn tại hoặc đã bị xóa',
-        robots: {
-          index: false,
-          follow: false,
-        },
-      };
-    }
+    // Fetch real story data using cached function
+    const storyResult = await getCachedStoryDetail(resolvedParams.idDoc,"_");
+    console.log('reading---3',storyResult);
+    if (storyResult.success && storyResult.data) {
+      const apiData = storyResult.data as any;
+      
+      if (apiData?.data?.detail_documents && apiData?.data?.infoDoc) {
+        const { detail_documents, infoDoc } = apiData.data;
+        
+        const title = `${detail_documents.nameChapter} - ${infoDoc.name} | ${config.name}`;
 
-    const title = `${story.name} | ${config.name}`;
-    const description = story.sortDesc || `Đọc truyện ${story.name} tại ${config.name}. ${story.authName ? `Tác giả: ${story.authName}` : ''}`;
+
+        const description = `Đọc ${detail_documents.nameChapter} của truyện ${infoDoc.name} tại ${config.name}. Nội dung chất lượng cao, cập nhật mới nhất.`;
+        const keywords = [
+          infoDoc.name,
+          detail_documents.nameChapter,
+          infoDoc.authName,
+          infoDoc.genresName,
+          'đọc truyện',
+          'chương',
+          'truyện online',
+          config.name
+        ].filter(Boolean);
+
+        return {
+          title,
+          description,
+          keywords: keywords,
+          creator: infoDoc.authName || config.name,
+          publisher: config.name,
+          metadataBase: new URL(`https://${config.domain}`),
+          alternates: {
+            canonical: `/${resolvedParams.idDoc}/${resolvedParams.idDetail}`,
+          },
+          openGraph: {
+            title,
+            description,
+            url: `https://${config.domain}/${resolvedParams.idDoc}/${resolvedParams.idDetail}`,
+            siteName: config.name,
+            images: [
+              {
+                url: infoDoc.image || config.seo?.ogImage || '',
+                width: 1200,
+                height: 630,
+                alt: `${detail_documents.nameChapter} - ${infoDoc.name}`,
+              },
+            ],
+            locale: 'vi_VN',
+            type: 'article',
+            section: 'Truyện',
+          },
+          twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [infoDoc.image || config.seo?.ogImage || ''],
+            creator: config.seo?.twitterHandle,
+          },
+          robots: {
+            index: true,
+            follow: true,
+            googleBot: {
+              index: true,
+              follow: true,
+              'max-video-preview': -1,
+              'max-image-preview': 'large',
+              'max-snippet': -1,
+            },
+          },
+          other: {
+            'article:section': 'Truyện',
+            'article:tag': detail_documents.nameChapter,
+            'article:author': infoDoc.authName,
+            'article:published_time': detail_documents.date,
+          },
+        };
+      }
+    }
+    
+    // Fallback to original logic if API fails
+
+    
+    const storyName = `Truyện ${resolvedParams.idDoc}`;
+    const chapterName = `Chương ${resolvedParams.idDetail}`;
+
+    const title = `${chapterName} - ${storyName} | ${config.name}`;
+    const description = `Đọc ${chapterName} của truyện ${storyName} tại ${config.name}. Nội dung chất lượng cao, cập nhật mới nhất.`;
     const keywords = [
-      story.name,
-      story.authName || '',
-      story.genresName || '',
-      'truyện',
+      storyName,
+      chapterName,
       'đọc truyện',
+      'chương',
+      'truyện online',
       config.name
-    ].filter(Boolean);
+    ];
 
     return {
       title,
       description,
       keywords: keywords,
-      authors: story.authName ? [{ name: story.authName }] : undefined,
-      creator: story.authName || config.name,
+      creator: config.name,
       publisher: config.name,
       metadataBase: new URL(`https://${config.domain}`),
       alternates: {
-        canonical: `/${resolvedParams.idDoc}`,
+        canonical: `/${resolvedParams.idDoc}/${resolvedParams.idDetail}`,
       },
       openGraph: {
         title,
         description,
-        url: `https://${config.domain}/${resolvedParams.idDoc}`,
+        url: `https://${config.domain}/${resolvedParams.idDoc}/${resolvedParams.idDetail}`,
         siteName: config.name,
-        images: story.image || story.thumbnail ? [
+        images: [
           {
-            url: story.image || story.thumbnail || '',
-            width: 600,
-            height: 800,
-            alt: story.name,
-          },
-        ] : [
-          {
-            url: config.seo.ogImage,
+            url: config.seo?.ogImage || '',
             width: 1200,
             height: 630,
-            alt: config.name,
+            alt: `${chapterName} - ${storyName}`,
           },
         ],
         locale: 'vi_VN',
         type: 'article',
-        publishedTime: story.createdAt,
-        modifiedTime: story.updatedAt,
-        authors: story.authName ? [story.authName] : undefined,
-        section: story.genresName || 'Truyện',
+        section: 'Truyện',
       },
       twitter: {
         card: 'summary_large_image',
         title,
         description,
-        images: story.image || story.thumbnail ? [story.image || story.thumbnail || ''] : [config.seo.ogImage],
-        creator: config.seo.twitterHandle,
+        images: [config.seo?.ogImage || ''],
+        creator: config.seo?.twitterHandle,
       },
       robots: {
         index: true,
@@ -101,19 +163,17 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
         },
       },
       other: {
-        'article:author': story.authName || '',
-        'article:section': story.genresName || '',
-        'article:published_time': story.createdAt || '',
-        'article:modified_time': story.updatedAt || '',
+        'article:section': 'Truyện',
+        'article:tag': chapterName,
       },
     };
   } catch (error) {
-    console.error('Error generating story metadata:', error);
+    console.error('Error generating chapter metadata:', error);
     
     // Fallback metadata
     return {
-      title: `Truyện | ${config.name}`,
-      description: `Đọc truyện tại ${config.name}`,
+      title: `Đọc truyện | ${config.name}`,
+      description: `Đọc truyện online tại ${config.name}`,
       robots: {
         index: false,
         follow: true,
@@ -122,6 +182,6 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
   }
 }
 
-export default function StoryInfoLayout({ children }: StoryInfoLayoutProps) {
+export default function ChapterReadingLayout({ children }: ChapterReadingLayoutProps) {
   return children;
 }

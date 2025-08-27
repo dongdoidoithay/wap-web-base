@@ -8,84 +8,92 @@ import { useDomain } from '@/hooks/use-domain';
 import { StoryListSkeleton } from '@/components/loading-skeleton';
 import { ApiErrorBoundary } from '@/components/api-error-boundary';
 import { Header, FooterNav } from '@/components/ui';
+import { fetchStoryDetail, fetchStoryListChapter } from '@/services/story-detail.service';
+import { getCachedStoryDetail } from '@/lib/cached-story-detail';
 
 interface StoryReadingPageProps {
-  params: {
+  params: Promise<{
     idDoc: string;
     idDetail: string;
-  };
+  }>;
 }
 
-interface ChapterContent {
-  id: string;
+// Interfaces based on the actual API response
+interface DetailDocument {
+  slug: string;
+  idDetail: string;
+  idDoc: string;
+  nameChapter: string;
+  nameSeoChapter: string | null;
+  nameDoc: string;
+  view: number;
+  value: any;
+  date: string;
+  url: string;
+  urlDowload: string;
+  source: string;
+  lang: string;
+  upVote: number;
+  downVote: number;
+  level: number;
+  site: any;
+  idDetailNext: string | null;
+  idDetailPrev: string | null;
+  nameDetailNext: string | null;
+  nameDetailPrev: string | null;
+  totalChapters: number;
+  currentChapterIndex: number;
+}
+
+interface InfoDoc {
+  idDoc: string;
   name: string;
-  content: string;
-  storyId: string;
-  storyName: string;
-  chapterNumber: number;
-  nextChapter?: string;
-  prevChapter?: string;
-  createdAt: string;
+  nameOther: string;
+  nameSeo: string;
+  image: string;
+  desc: string;
+  sortDesc: string;
+  auth: string;
+  authName: string;
+  genres: string;
+  genresName: string;
+  year: string;
+  view: number;
+  art: string;
+  artName: string;
+  status: string;
+  statusName: string;
+  date: string;
+  type: string;
+  typeName: string | null;
+  url: string;
+  tags: any;
+  rate: number;
+  postedBy: any;
+  serialization: any;
+  lang: string;
+  idDocRef: string;
+  upVote: number;
+  downVote: number;
+  commentCount: number;
+  followCount: number;
+  descSeo: string;
+  descSeoFull: string;
+  keySeo: string;
+  detail_documents: any[];
 }
 
-// Mock function to fetch chapter content
-async function fetchChapterContent(idDoc: string, idDetail: string): Promise<{
-  data: ChapterContent | null;
-  success: boolean;
-  message?: string;
-}> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-  
-  // Simulate occasional errors for testing
-  if (Math.random() < 0.05) {
-    return {
-      data: null,
-      success: false,
-      message: 'Network error'
-    };
-  }
-
-  // Extract chapter number from IdDetail
-  const chapterMatch = idDetail.match(/(?:chapter-)?(\d+)/);
-  const chapterNumber = chapterMatch ? parseInt(chapterMatch[1]) : 1;
-  
-  // Generate mock chapter content
-  const mockContent = `
-<h2>Chương ${chapterNumber}: Khởi đầu mới</h2>
-
-<p>Trong một buổi sáng đầy nắng, ánh sáng vàng óng chiếu qua khung cửa sổ, tạo nên những vệt sáng lung linh trên sàn nhà. Không khí trong lành mang theo hương thơm nhẹ của những bông hoa nở rộ trong vườn.</p>
-
-<p>Nhân vật chính của chúng ta, một người trẻ tuổi đầy hoài bão, đang đứng bên cửa sổ nhìn ra khu vườn xinh đẹp. Trong tâm trí, những kế hoạch cho tương lai đang dần hình thành, như những tia sáng đầu tiên của bình minh.</p>
-
-<p>"Hôm nay sẽ là một ngày đặc biệt," họ thầm nghĩ, một nụ cười tự nhiên nở trên môi. Đây chính là lúc để bắt đầu cuộc hành trình mới, một chương mới trong cuốn sách cuộc đời.</p>
-
-<p>Xa xa, tiếng chim hót líu lo hòa cùng tiếng gió thổi qua những tán lá xanh mướt. Mọi thứ dường như đang chuẩn bị cho một khởi đầu tươi đẹp, đầy hứa hẹn.</p>
-
-<p>Nhưng như mọi câu chuyện tuyệt vời, phía trước vẫn còn những thử thách đang chờ đợi. Những bài học quan trọng về cuộc sống, tình bạn, và sự trưởng thành sẽ dần được hé lộ qua từng trang sách.</p>
-
-<p>Trong khoảnh khắc yên bình này, ai có thể ngờ rằng những diễn biến thú vị và bất ngờ sắp diễn ra? Hãy cùng theo dõi và khám phá xem câu chuyện sẽ dẫn chúng ta đến đâu...</p>
-
-<p style="text-align: center; font-weight: bold; margin-top: 2em;">--- Hết chương ${chapterNumber} ---</p>
-  `.trim();
-
-  return {
-    data: {
-      id: idDetail,
-      name: `Chương ${chapterNumber}: Khởi đầu mới`,
-      content: mockContent,
-      storyId: idDoc,
-      storyName: `Truyện ${idDoc}`,
-      chapterNumber,
-      nextChapter: `chapter-${chapterNumber + 1}`,
-      prevChapter: chapterNumber > 1 ? `chapter-${chapterNumber - 1}` : undefined,
-      createdAt: new Date().toISOString()
-    },
-    success: true
-  };
+interface StoryDetailData {
+  detail_documents: DetailDocument;
+  chapterList: any[];
+  infoDoc: InfoDoc;
 }
 
-export default function StoryReadingPage({ params }: StoryReadingPageProps) {
+export default function StoryReadingPage({ params: paramsPromise }: StoryReadingPageProps) {
+  // Unwrap params Promise using React.use() as required in Next.js 15+
+  const params = React.use(paramsPromise);
+console.log('reading---1')
+
   // ========================
   // 1. DOMAIN CONFIGURATION
   // ========================
@@ -96,10 +104,18 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
   // 2. STATE MANAGEMENT
   // ========================
   const [state, setState] = useState({
-    chapter: null as ChapterContent | null,
+    storyDetail: null as StoryDetailData | null,
     loading: true,
     error: null as string | null,
     initialized: false,
+  });
+
+  // Chapter list popup state
+  const [chapterListState, setChapterListState] = useState({
+    isOpen: false,
+    loading: false,
+    chapters: null as any,
+    error: null as string | null,
   });
 
   // ========================
@@ -107,23 +123,32 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
   // ========================
   useEffect(() => {
     const loadChapterContent = async () => {
-      if (!params.idDoc || !params.idDetail || !domainConfig) return;
+      console.log('reading---1#',params);
+      if (!params.idDoc || !params.idDetail ) return;
 
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       try {
-        const result = await fetchChapterContent(params.idDoc, params.idDetail);
-        
+        // Use cached data from layout instead of calling API again
+        const result = await getCachedStoryDetail(params.idDoc, params.idDetail);
+        console.log('reading---2 (using cached data)',result);
         if (result.success && result.data) {
-          setState(prev => ({
-            ...prev,
-            chapter: result.data,
-            loading: false,
-            initialized: true,
-            error: null
-          }));
+          // Handle the API response structure
+          const apiData = result.data as any;
+          
+          // The fetchStoryDetail should return the full API response structure
+          if (apiData && apiData.data && apiData.data.detail_documents) {
+            setState(prev => ({
+              ...prev,
+              storyDetail: apiData.data,
+              loading: false,
+              initialized: true,
+              error: null
+            }));
+          } else {
+            notFound();
+          }
         } else {
-          // Chapter not found
           notFound();
         }
       } catch (error) {
@@ -137,14 +162,83 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
       }
     };
 
-    if (!isConfigLoading && domainConfig) {
+      if(!isConfigLoading)
       loadChapterContent();
-    }
-  }, []);
-  //params.idDoc, params.idDetail, domainConfig, isConfigLoading
+  }, [params.idDoc ,params.idDetail,isConfigLoading]);
 
   // ========================
-  // 4. LOADING STATE
+  // 4. CHAPTER LIST FUNCTIONS
+  // ========================
+  const handleOpenChapterList = async () => {
+    console.log('chapter',chapterListState.chapters);
+    if (chapterListState.chapters?.data) {
+      // If chapters already loaded, just open popup
+      setChapterListState(prev => ({ ...prev, isOpen: true }));
+      return;
+    }
+
+    // Show loading state and open popup
+    setChapterListState(prev => ({ 
+      ...prev, 
+      isOpen: true, 
+      loading: true, 
+      error: null 
+    }));
+
+    try {
+      const result = await fetchStoryListChapter(params.idDoc);
+      
+      if (result.success && result.data) {
+        console.log('result.data', result.data);
+        setChapterListState(prev => ({
+          ...prev,
+          chapters: result.data,
+          loading: false,
+          error: null
+        }));
+      } else {
+        setChapterListState(prev => ({
+          ...prev,
+          loading: false,
+          error: result.message || 'Không thể tải danh sách chương'
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Lỗi khi tải danh sách chương';
+      setChapterListState(prev => ({
+        ...prev,
+        loading: false,
+        error: errorMessage
+      }));
+    }
+  };
+
+  const handleCloseChapterList = () => {
+    setChapterListState(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Keyboard support for closing popup
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && chapterListState.isOpen) {
+        handleCloseChapterList();
+      }
+    };
+
+    if (chapterListState.isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when popup is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [chapterListState.isOpen]);
+
+  // ========================
+  // 5. LOADING STATE
   // ========================
   if (isConfigLoading || !domainConfig) {
     return (
@@ -174,7 +268,7 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
     );
   }
 
-  if (state.error || !state.chapter) {
+  if (state.error || !state.storyDetail) {
     return (
       <>
         <SEOHead 
@@ -205,7 +299,19 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
     );
   }
 
-  const chapter = state.chapter;
+  const { detail_documents, infoDoc } = state.storyDetail;
+  
+  // Format content with proper line breaks
+  const formatContent = (content: string) => {
+    return content
+      .split('\r\n\r\n')
+      .map(paragraph => paragraph.trim())
+      .filter(paragraph => paragraph.length > 0)
+      .map(paragraph => `<p>${paragraph.replace(/\r\n/g, '<br>')}</p>`)
+      .join('\n');
+  };
+  
+  const formattedContent = formatContent(detail_documents.source);
 
   // ========================
   // 5. RENDER CHAPTER CONTENT
@@ -214,34 +320,34 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
     <>
       {/* Enhanced SEO HEAD with AI Bot Support */}
       <SEOHead 
-        title={`${chapter.name} - ${chapter.storyName} | ${domainConfig.name}`}
-        description={`Đọc ${chapter.name} của truyện ${chapter.storyName} tại ${domainConfig.name}. Nội dung chất lượng cao, cập nhật mới nhất.`}
-        keywords={[chapter.storyName, chapter.name, 'đọc truyện', 'chương', domainConfig.name]}
+        title={`${detail_documents.nameChapter} - ${infoDoc.name} | ${domainConfig.name}`}
+        description={`Đọc ${detail_documents.nameChapter} của truyện ${infoDoc.name} tại ${domainConfig.name}. Nội dung chất lượng cao, cập nhật mới nhất.`}
+        keywords={[infoDoc.name, detail_documents.nameChapter, 'đọc truyện', 'chương', domainConfig.name]}
         canonical={`https://${domainConfig.domain}/${params.idDoc}/${params.idDetail}`}
         article={{
-          author: 'Admin', // Replace with actual author from story data
-          publishedTime: chapter.createdAt,
-          modifiedTime: chapter.createdAt,
+          author: infoDoc.authName || 'Admin',
+          publishedTime: detail_documents.date,
+          modifiedTime: detail_documents.date,
           section: 'Truyện',
-          tags: [chapter.storyName, chapter.name, 'chapter']
+          tags: [infoDoc.name, detail_documents.nameChapter, 'chapter']
         }}
         breadcrumbs={[
           { name: 'Trang chủ', url: '/' },
-          { name: chapter.storyName, url: `/${params.idDoc}` },
-          { name: chapter.name, url: `/${params.idDoc}/${params.idDetail}` }
+          { name: infoDoc.name, url: `/${params.idDoc}` },
+          { name: detail_documents.nameChapter, url: `/${params.idDoc}/${params.idDetail}` }
         ]}
         customSchema={{
           "@context": "https://schema.org",
           "@type": "Chapter",
-          "name": chapter.name,
+          "name": detail_documents.nameChapter,
           "isPartOf": {
             "@type": "Book",
-            "name": chapter.storyName,
+            "name": infoDoc.name,
             "url": `https://${domainConfig.domain}/${params.idDoc}`
           },
-          "position": chapter.chapterNumber,
+          "position": detail_documents.currentChapterIndex + 1,
           "url": `https://${domainConfig.domain}/${params.idDoc}/${params.idDetail}`,
-          "datePublished": chapter.createdAt,
+          "datePublished": detail_documents.date,
           "inLanguage": "vi-VN"
         }}
       />
@@ -259,33 +365,38 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
                 <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
                 <span>›</span>
                 <Link href={`/${params.idDoc}`} className="hover:text-primary transition-colors">
-                  {chapter.storyName}
+                  {infoDoc.name}
                 </Link>
                 <span>›</span>
-                <span className="text-body-primary font-medium">{chapter.name}</span>
+                <span className="text-body-primary font-medium">{detail_documents.nameChapter}</span>
               </nav>
 
               {/* CHAPTER HEADER */}
               <div className="text-center mb-8">
                 <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
-                  {chapter.name}
+                  {detail_documents.nameChapter}
                 </h1>
                 <p className="text-muted">
                   Truyện: <Link href={`/${params.idDoc}`} className="hover:text-primary transition-colors font-medium">
-                    {chapter.storyName}
+                    {infoDoc.name}
                   </Link>
                 </p>
+                <div className="text-sm text-muted mt-2">
+                  Chương {detail_documents.currentChapterIndex + 1} / {detail_documents.totalChapters} •
+                  Tác giả: {infoDoc.authName} •
+                  Lượt xem: {detail_documents.view.toLocaleString()}
+                </div>
               </div>
 
               {/* NAVIGATION CONTROLS */}
               <div className="flex flex-wrap justify-between items-center gap-4 mb-8 p-4 bg-card rounded-lg border">
                 <div className="flex gap-2">
-                  {chapter.prevChapter ? (
+                  {detail_documents.idDetailPrev ? (
                     <Link
-                      href={`/${params.idDoc}/${chapter.prevChapter}`}
+                      href={`/${params.idDoc}/${detail_documents.idDetailPrev}`}
                       className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      ← Chương trước
+                      ← {detail_documents.nameDetailPrev || 'Chương trước'}
                     </Link>
                   ) : (
                     <span className="px-4 py-2 bg-muted/50 text-muted rounded-lg text-sm cursor-not-allowed">
@@ -293,21 +404,21 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
                     </span>
                   )}
                   
-                  <Link
-                    href={`/${params.idDoc}`}
+                  <button
+                    onClick={handleOpenChapterList}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
                   >
                     📚 Danh sách chương
-                  </Link>
+                  </button>
                 </div>
 
                 <div>
-                  {chapter.nextChapter && (
+                  {detail_documents.idDetailNext && (
                     <Link
-                      href={`/${params.idDoc}/${chapter.nextChapter}`}
+                      href={`/${params.idDoc}/${detail_documents.idDetailNext}`}
                       className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      Chương sau →
+                      {detail_documents.nameDetailNext || 'Chương sau'} →
                     </Link>
                   )}
                 </div>
@@ -316,20 +427,20 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
               {/* CHAPTER CONTENT */}
               <div className="bg-card rounded-lg p-6 md:p-8 shadow-sm border">
                 <div 
-                  className="prose prose-lg max-w-none text-body-primary leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: chapter.content }}
+                  className="prose prose-lg max-w-none text-body-primary leading-relaxed whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ __html: formattedContent }}
                 />
               </div>
 
               {/* BOTTOM NAVIGATION */}
               <div className="flex flex-wrap justify-between items-center gap-4 mt-8 p-4 bg-card rounded-lg border">
                 <div className="flex gap-2">
-                  {chapter.prevChapter ? (
+                  {detail_documents.idDetailPrev ? (
                     <Link
-                      href={`/${params.idDoc}/${chapter.prevChapter}`}
+                      href={`/${params.idDoc}/${detail_documents.idDetailPrev}`}
                       className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      ← Chương trước
+                      ← {detail_documents.nameDetailPrev || 'Chương trước'}
                     </Link>
                   ) : (
                     <span className="px-4 py-2 bg-muted/50 text-muted rounded-lg text-sm cursor-not-allowed">
@@ -337,21 +448,21 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
                     </span>
                   )}
                   
-                  <Link
-                    href={`/${params.idDoc}`}
+                  <button
+                    onClick={handleOpenChapterList}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
                   >
                     📚 Danh sách chương
-                  </Link>
+                  </button>
                 </div>
 
                 <div>
-                  {chapter.nextChapter && (
+                  {detail_documents.idDetailNext && (
                     <Link
-                      href={`/${params.idDoc}/${chapter.nextChapter}`}
+                      href={`/${params.idDoc}/${detail_documents.idDetailNext}`}
                       className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      Chương sau →
+                      {detail_documents.nameDetailNext || 'Chương sau'} →
                     </Link>
                   )}
                 </div>
@@ -361,8 +472,22 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
               <div className="mt-8 p-4 bg-card rounded-lg border">
                 <h3 className="font-bold text-primary mb-2">Về truyện này</h3>
                 <p className="text-sm text-muted mb-3">
-                  Bạn đang đọc <strong>{chapter.name}</strong> thuộc truyện <strong>{chapter.storyName}</strong>
+                  Bạn đang đọc <strong>{detail_documents.nameChapter}</strong> thuộc truyện <strong>{infoDoc.name}</strong>
                 </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                  <div>
+                    <span className="font-medium">Tác giả:</span> {infoDoc.authName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Thể loại:</span> {infoDoc.genresName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Trạng thái:</span> {infoDoc.statusName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Lượt xem:</span> {infoDoc.view.toLocaleString()}
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Link
                     href={`/${params.idDoc}`}
@@ -386,6 +511,100 @@ export default function StoryReadingPage({ params }: StoryReadingPageProps) {
         {/* FOOTER */}
         <FooterNav />
       </div>
+
+      {/* CHAPTER LIST POPUP */}
+      {chapterListState.isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            // Close popup when clicking on backdrop
+            if (e.target === e.currentTarget) {
+              handleCloseChapterList();
+            }
+          }}
+        >
+          <div className="bg-background border rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] flex flex-col">
+            {/* Popup Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-xl font-bold text-primary">
+                Danh sách chương - {state.storyDetail?.infoDoc.name}
+              </h2>
+              <button
+                onClick={handleCloseChapterList}
+                className="text-muted hover:text-body-primary transition-colors p-2"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Popup Content */}
+            <div className="flex-1 overflow-auto p-4">
+              {chapterListState.loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted">Đang tải danh sách chương...</p>
+                  </div>
+                </div>
+              ) : chapterListState.error ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <p className="text-red-500 mb-4">{chapterListState.error}</p>
+                    <button
+                      onClick={handleOpenChapterList}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                </div>
+              ) : chapterListState.chapters?.data ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {chapterListState.chapters.data.map((chapter: any, index: number) => (
+                    <Link
+                      key={chapter.idDetail || index}
+                      href={`/${params.idDoc}/${chapter.idDetail}`}
+                      onClick={handleCloseChapterList}
+                      className={`flex items-center justify-between p-3 rounded-lg border transition-colors group ${
+                        chapter.idDetail === params.idDetail 
+                          ? 'border-blue-500' 
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <span className={`text-sm ${
+                        chapter.idDetail === params.idDetail 
+                          ? 'font-bold text-blue-600' 
+                          : 'font-medium group-hover:text-primary'
+                      }`}>
+                        {chapter.nameChapter || `Chương ${index + 1}`}
+                      </span>
+                      <span className="text-xs text-muted">
+                        { new Date(chapter.date).toLocaleDateString("vi-VN")|| ''}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-12">
+                  <p className="text-muted">Không có chương nào</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Popup Footer */}
+            <div className="border-t p-4">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={handleCloseChapterList}
+                  className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

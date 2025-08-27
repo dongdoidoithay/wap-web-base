@@ -2,21 +2,98 @@
 
 import React, { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { SEOHead } from '@/components/seo-head';
 import { useDomain } from '@/hooks/use-domain';
 import { StoryListSkeleton } from '@/components/loading-skeleton';
 import { ApiErrorBoundary } from '@/components/api-error-boundary';
 import { Header, FooterNav } from '@/components/ui';
-import { fetchStoryDetailDev as fetchStoryDetail } from '../../services/story-detail.service';
-import type { StoryDetail } from '../../types';
+import { fetchStoryDetail, fetchStoryListChapter } from '@/services/story-detail.service';
+import { getCachedStoryDetail } from '@/lib/cached-story-detail';
 
-interface StoryInfoPageProps {
-  params: {
+interface StoryReadingPageProps {
+  params: Promise<{
     idDoc: string;
-  };
+    idDetail: string;
+  }>;
 }
 
-export default function StoryInfoPage({ params }: StoryInfoPageProps) {
+// Interfaces based on the actual API response
+interface DetailDocument {
+  slug: string;
+  idDetail: string;
+  idDoc: string;
+  nameChapter: string;
+  nameSeoChapter: string | null;
+  nameDoc: string;
+  view: number;
+  value: any;
+  date: string;
+  url: string;
+  urlDowload: string;
+  source: string;
+  lang: string;
+  upVote: number;
+  downVote: number;
+  level: number;
+  site: any;
+  idDetailNext: string | null;
+  idDetailPrev: string | null;
+  nameDetailNext: string | null;
+  nameDetailPrev: string | null;
+  totalChapters: number;
+  currentChapterIndex: number;
+}
+
+interface InfoDoc {
+  idDoc: string;
+  name: string;
+  nameOther: string;
+  nameSeo: string;
+  image: string;
+  desc: string;
+  sortDesc: string;
+  auth: string;
+  authName: string;
+  genres: string;
+  genresName: string;
+  year: string;
+  view: number;
+  art: string;
+  artName: string;
+  status: string;
+  statusName: string;
+  date: string;
+  type: string;
+  typeName: string | null;
+  url: string;
+  tags: any;
+  rate: number;
+  postedBy: any;
+  serialization: any;
+  lang: string;
+  idDocRef: string;
+  upVote: number;
+  downVote: number;
+  commentCount: number;
+  followCount: number;
+  descSeo: string;
+  descSeoFull: string;
+  keySeo: string;
+  detail_documents: any[];
+}
+
+interface StoryDetailData {
+  detail_documents: DetailDocument;
+  chapterList: any[];
+  infoDoc: InfoDoc;
+}
+
+export default function StoryReadingPage({ params: paramsPromise }: StoryReadingPageProps) {
+  // Unwrap params Promise using React.use() as required in Next.js 15+
+  const params = React.use(paramsPromise);
+console.log('reading---1')
+
   // ========================
   // 1. DOMAIN CONFIGURATION
   // ========================
@@ -27,38 +104,55 @@ export default function StoryInfoPage({ params }: StoryInfoPageProps) {
   // 2. STATE MANAGEMENT
   // ========================
   const [state, setState] = useState({
-    story: null as StoryDetail | null,
+    storyDetail: null as StoryDetailData | null,
     loading: true,
     error: null as string | null,
     initialized: false,
+  });
+
+  // Chapter list popup state
+  const [chapterListState, setChapterListState] = useState({
+    isOpen: false,
+    loading: false,
+    chapters: null as any,
+    error: null as string | null,
   });
 
   // ========================
   // 3. DATA LOADING
   // ========================
   useEffect(() => {
-    const loadStoryDetail = async () => {
-      if (!params.idDoc || !domainConfig) return;
+    const loadChapterContent = async () => {
+      console.log('reading---1#',params);
+      if (!params.idDoc ) return;
 
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       try {
-        const result = await fetchStoryDetail(params.idDoc);
-        
+        // Use cached data from layout instead of calling API again
+        const result = await getCachedStoryDetail(params.idDoc, "_");
+        console.log('reading---2 (using cached data)',result);
         if (result.success && result.data) {
-          setState(prev => ({
-            ...prev,
-            story: result.data,
-            loading: false,
-            initialized: true,
-            error: null
-          }));
+          // Handle the API response structure
+          const apiData = result.data as any;
+          
+          // The fetchStoryDetail should return the full API response structure
+          if (apiData && apiData.data && apiData.data.detail_documents) {
+            setState(prev => ({
+              ...prev,
+              storyDetail: apiData.data,
+              loading: false,
+              initialized: true,
+              error: null
+            }));
+          } else {
+            notFound();
+          }
         } else {
-          // Story not found
           notFound();
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load story';
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load chapter';
         setState(prev => ({
           ...prev,
           loading: false,
@@ -68,13 +162,82 @@ export default function StoryInfoPage({ params }: StoryInfoPageProps) {
       }
     };
 
-    if (!isConfigLoading && domainConfig) {
-      loadStoryDetail();
-    }
-  }, []);
-  //params.idDoc, domainConfig, isConfigLoading
+      if(!isConfigLoading)
+      loadChapterContent();
+  }, [params.idDoc ,isConfigLoading]);
+
   // ========================
-  // 4. LOADING STATE
+  // 4. CHAPTER LIST FUNCTIONS
+  // ========================
+  const handleOpenChapterList = async () => {
+    if (chapterListState.chapters) {
+      // If chapters already loaded, just open popup
+      setChapterListState(prev => ({ ...prev, isOpen: true }));
+      return;
+    }
+
+    // Show loading state and open popup
+    setChapterListState(prev => ({ 
+      ...prev, 
+      isOpen: true, 
+      loading: true, 
+      error: null 
+    }));
+
+    try {
+      const result = await fetchStoryListChapter(params.idDoc);
+      
+      if (result.success && result.data) {
+        console.log('result.data', result.data);
+        setChapterListState(prev => ({
+          ...prev,
+          chapters: result.data,
+          loading: false,
+          error: null
+        }));
+      } else {
+        setChapterListState(prev => ({
+          ...prev,
+          loading: false,
+          error: result.message || 'Không thể tải danh sách chương'
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Lỗi khi tải danh sách chương';
+      setChapterListState(prev => ({
+        ...prev,
+        loading: false,
+        error: errorMessage
+      }));
+    }
+  };
+
+  const handleCloseChapterList = () => {
+    setChapterListState(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Keyboard support for closing popup
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && chapterListState.isOpen) {
+        handleCloseChapterList();
+      }
+    };
+
+    if (chapterListState.isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when popup is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [chapterListState.isOpen]);
+
+  // ========================
+  // 5. LOADING STATE
   // ========================
   if (isConfigLoading || !domainConfig) {
     return (
@@ -90,8 +253,8 @@ export default function StoryInfoPage({ params }: StoryInfoPageProps) {
     return (
       <>
         <SEOHead 
-          title="Đang tải..."
-          description="Đang tải thông tin truyện"
+          title="Đang tải chương..."
+          description="Đang tải nội dung chương"
         />
         <div className="min-h-dvh bg-background text-body-primary">
           <Header config={domainConfig} />
@@ -104,29 +267,29 @@ export default function StoryInfoPage({ params }: StoryInfoPageProps) {
     );
   }
 
-  if (state.error || !state.story) {
+  if (state.error || !state.storyDetail) {
     return (
       <>
         <SEOHead 
-          title="Lỗi tải truyện"
-          description="Không thể tải thông tin truyện"
+          title="Lỗi tải chương"
+          description="Không thể tải nội dung chương"
         />
         <div className="min-h-dvh bg-background text-body-primary">
           <Header config={domainConfig} />
           <main className="container mx-auto px-4 py-6">
             <div className="text-center py-12">
               <h1 className="text-2xl font-bold text-primary mb-4">
-                Không tìm thấy truyện
+                Không tìm thấy chương
               </h1>
               <p className="text-muted mb-6">
-                {state.error || 'Truyện không tồn tại hoặc đã bị xóa'}
+                {state.error || 'Chương không tồn tại hoặc đã bị xóa'}
               </p>
-              <a 
-                href="/" 
+              <Link 
+                href={`/${params.idDoc}`}
                 className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
               >
-                Về trang chủ
-              </a>
+                Về trang truyện
+              </Link>
             </div>
           </main>
           <FooterNav />
@@ -135,20 +298,57 @@ export default function StoryInfoPage({ params }: StoryInfoPageProps) {
     );
   }
 
-  const story = state.story;
+  const { detail_documents, infoDoc } = state.storyDetail;
+  
+  // Format content with proper line breaks
+  const formatContent = (content: string) => {
+    return content
+      .split('\r\n\r\n')
+      .map(paragraph => paragraph.trim())
+      .filter(paragraph => paragraph.length > 0)
+      .map(paragraph => `<p>${paragraph.replace(/\r\n/g, '<br>')}</p>`)
+      .join('\n');
+  };
+  
+  const formattedContent = formatContent(detail_documents.source);
 
   // ========================
-  // 5. RENDER STORY INFO
+  // 5. RENDER CHAPTER CONTENT
   // ========================
   return (
     <>
-      {/* SEO HEAD */}
+      {/* Enhanced SEO HEAD with AI Bot Support */}
       <SEOHead 
-        title={`${story.name} | ${domainConfig.name}`}
-        description={story.sortDesc || `Đọc truyện ${story.name} tại ${domainConfig.name}`}
-        keywords={[story.name, story.authName || '', story.genresName || '', 'truyện', 'đọc truyện']}
-        ogImage={story.image || story.thumbnail}
-        canonical={`https://${domainConfig.domain}/${params.idDoc}`}
+        title={`${detail_documents.nameChapter} - ${infoDoc.name} | ${domainConfig.name}`}
+        description={`Đọc ${detail_documents.nameChapter} của truyện ${infoDoc.name} tại ${domainConfig.name}. Nội dung chất lượng cao, cập nhật mới nhất.`}
+        keywords={[infoDoc.name, detail_documents.nameChapter, 'đọc truyện', 'chương', domainConfig.name]}
+        canonical={`https://${domainConfig.domain}/${params.idDoc}}`}
+        article={{
+          author: infoDoc.authName || 'Admin',
+          publishedTime: detail_documents.date,
+          modifiedTime: detail_documents.date,
+          section: 'Truyện',
+          tags: [infoDoc.name, detail_documents.nameChapter, 'chapter']
+        }}
+        breadcrumbs={[
+          { name: 'Trang chủ', url: '/' },
+          { name: infoDoc.name, url: `/${params.idDoc}` },
+          { name: detail_documents.nameChapter, url: `/${params.idDoc}}` }
+        ]}
+        customSchema={{
+          "@context": "https://schema.org",
+          "@type": "Chapter",
+          "name": detail_documents.nameChapter,
+          "isPartOf": {
+            "@type": "Book",
+            "name": infoDoc.name,
+            "url": `https://${domainConfig.domain}/${params.idDoc}`
+          },
+          "position": detail_documents.currentChapterIndex + 1,
+          "url": `https://${domainConfig.domain}/${params.idDoc}}`,
+          "datePublished": detail_documents.date,
+          "inLanguage": "vi-VN"
+        }}
       />
 
       <div className="min-h-dvh bg-background text-body-primary">
@@ -157,163 +357,150 @@ export default function StoryInfoPage({ params }: StoryInfoPageProps) {
 
         <main>
           <ApiErrorBoundary>
-            <div className="container mx-auto px-4 py-6">
+            <div className="container mx-auto px-4 py-6 max-w-4xl">
               
               {/* BREADCRUMB */}
               <nav className="flex items-center space-x-2 text-sm text-muted mb-6">
-                <a href="/" className="hover:text-primary transition-colors">Trang chủ</a>
+                <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
                 <span>›</span>
-                <span className="text-body-primary font-medium">{story.name}</span>
+                <Link href={`/${params.idDoc}`} className="hover:text-primary transition-colors">
+                  {infoDoc.name}
+                </Link>
+                <span>›</span>
+                <span className="text-body-primary font-medium">{detail_documents.nameChapter}</span>
               </nav>
 
-              {/* STORY INFO */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                
-                {/* STORY IMAGE */}
-                <div className="lg:col-span-1">
-                  <div className="relative aspect-[3/4] bg-muted rounded-lg overflow-hidden shadow-lg">
-                    {story.image || story.thumbnail ? (
-                      <img
-                        src={story.image || story.thumbnail}
-                        alt={story.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-muted">
-                        <span>Không có ảnh</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* STORY DETAILS */}
-                <div className="lg:col-span-2 space-y-6">
-                  
-                  {/* TITLE & BASIC INFO */}
-                  <div>
-                    <h1 className="text-3xl font-bold text-primary mb-4 leading-tight">
-                      {story.name}
-                    </h1>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      
-                      {story.authName && (
-                        <div className="flex items-center">
-                          <span className="font-medium text-muted min-w-[100px]">Tác giả:</span>
-                          <span className="text-body-primary">{story.authName}</span>
-                        </div>
-                      )}
-                      
-                      {story.genresName && (
-                        <div className="flex items-center">
-                          <span className="font-medium text-muted min-w-[100px]">Thể loại:</span>
-                          <span className="text-body-primary">{story.genresName}</span>
-                        </div>
-                      )}
-                      
-                      {story.statusName && (
-                        <div className="flex items-center">
-                          <span className="font-medium text-muted min-w-[100px]">Trạng thái:</span>
-                          <span className="text-body-primary">{story.statusName}</span>
-                        </div>
-                      )}
-                      
-                      {typeof story.chapters === 'number' && (
-                        <div className="flex items-center">
-                          <span className="font-medium text-muted min-w-[100px]">Số chương:</span>
-                          <span className="text-body-primary">{story.chapters.toLocaleString()}</span>
-                        </div>
-                      )}
-                      
-                      {typeof story.views === 'number' && (
-                        <div className="flex items-center">
-                          <span className="font-medium text-muted min-w-[100px]">Lượt xem:</span>
-                          <span className="text-body-primary">{story.views.toLocaleString()}</span>
-                        </div>
-                      )}
-                      
-                      {typeof story.follows === 'number' && (
-                        <div className="flex items-center">
-                          <span className="font-medium text-muted min-w-[100px]">Theo dõi:</span>
-                          <span className="text-body-primary">{story.follows.toLocaleString()}</span>
-                        </div>
-                      )}
-                      
-                      {story.updatedAt && (
-                        <div className="flex items-center">
-                          <span className="font-medium text-muted min-w-[100px]">Cập nhật:</span>
-                          <span className="text-body-primary">
-                            {new Date(story.updatedAt).toLocaleDateString('vi-VN')}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {story.lastChapter && (
-                        <div className="flex items-center">
-                          <span className="font-medium text-muted min-w-[100px]">Chương mới:</span>
-                          <span className="text-body-primary">{story.lastChapter}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* DESCRIPTION */}
-                  {story.sortDesc && (
-                    <div>
-                      <h2 className="text-xl font-bold text-primary mb-3">Tóm tắt</h2>
-                      <div className="prose prose-sm max-w-none text-body-primary">
-                        <p className="leading-relaxed">{story.sortDesc}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ACTION BUTTONS */}
-                  <div className="flex flex-wrap gap-4 pt-4">
-                    <a 
-                      href={`/${params.idDoc}/chapter-1`}
-                      className="flex-1 min-w-[200px] bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-center"
-                    >
-                      🎯 Đọc từ đầu
-                    </a>
-                    <a 
-                      href={`/${params.idDoc}/latest`}
-                      className="flex-1 min-w-[200px] bg-secondary text-secondary-foreground px-6 py-3 rounded-lg font-medium hover:bg-secondary/90 transition-colors text-center"
-                    >
-                      📚 Đọc chương mới nhất
-                    </a>
-                  </div>
+              {/* CHAPTER HEADER */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
+                  {detail_documents.nameChapter}
+                </h1>
+                <p className="text-muted">
+                  Truyện: <Link href={`/${params.idDoc}`} className="hover:text-primary transition-colors font-medium">
+                    {infoDoc.name}
+                  </Link>
+                </p>
+                <div className="text-sm text-muted mt-2">
+                  Chương {detail_documents.currentChapterIndex + 1} / {detail_documents.totalChapters} •
+                  Tác giả: {infoDoc.authName} •
+                  Lượt xem: {detail_documents.view.toLocaleString()}
                 </div>
               </div>
 
-              {/* CHAPTERS LIST */}
-              <div className="bg-card rounded-lg p-6 shadow-sm border">
-                <h2 className="text-xl font-bold text-primary mb-4">Danh sách chương</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {/* Mock chapter list for demonstration */}
-                  {Array.from({ length: story.chapters || 10 }, (_, index) => (
-                    <a
-                      key={index + 1}
-                      href={`/${params.idDoc}/chapter-${index + 1}`}
-                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-primary/5 transition-colors group"
+              {/* NAVIGATION CONTROLS */}
+              <div className="flex flex-wrap justify-between items-center gap-4 mb-8 p-4 bg-card rounded-lg border">
+                <div className="flex gap-2">
+                  {detail_documents.idDetailPrev ? (
+                    <Link
+                      href={`/${params.idDoc}/${detail_documents.idDetailPrev}`}
+                      className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      <span className="text-sm font-medium group-hover:text-primary">
-                        Chương {index + 1}
-                      </span>
-                      <span className="text-xs text-muted">
-                        {new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN')}
-                      </span>
-                    </a>
-                  )).slice(0, 20)}
+                      ← {detail_documents.nameDetailPrev || 'Chương trước'}
+                    </Link>
+                  ) : (
+                    <span className="px-4 py-2 bg-muted/50 text-muted rounded-lg text-sm cursor-not-allowed">
+                      ← Chương trước
+                    </span>
+                  )}
+                  
+                  <button
+                    onClick={handleOpenChapterList}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                  >
+                    📚 Danh sách chương
+                  </button>
                 </div>
-                
-                {(story.chapters || 0) > 20 && (
-                  <div className="text-center mt-4">
-                    <button className="px-6 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors">
-                      Xem thêm chương ({(story.chapters || 0) - 20} chương còn lại)
-                    </button>
+
+                <div>
+                  {detail_documents.idDetailNext && (
+                    <Link
+                      href={`/${params.idDoc}/${detail_documents.idDetailNext}`}
+                      className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
+                    >
+                      {detail_documents.nameDetailNext || 'Chương sau'} →
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* CHAPTER CONTENT */}
+              <div className="bg-card rounded-lg p-6 md:p-8 shadow-sm border">
+                <div 
+                  className="prose prose-lg max-w-none text-body-primary leading-relaxed whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ __html: formattedContent }}
+                />
+              </div>
+
+              {/* BOTTOM NAVIGATION */}
+              <div className="flex flex-wrap justify-between items-center gap-4 mt-8 p-4 bg-card rounded-lg border">
+                <div className="flex gap-2">
+                  {detail_documents.idDetailPrev ? (
+                    <Link
+                      href={`/${params.idDoc}/${detail_documents.idDetailPrev}`}
+                      className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
+                    >
+                      ← {detail_documents.nameDetailPrev || 'Chương trước'}
+                    </Link>
+                  ) : (
+                    <span className="px-4 py-2 bg-muted/50 text-muted rounded-lg text-sm cursor-not-allowed">
+                      ← Chương trước
+                    </span>
+                  )}
+                  
+                  <button
+                    onClick={handleOpenChapterList}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                  >
+                    📚 Danh sách chương
+                  </button>
+                </div>
+
+                <div>
+                  {detail_documents.idDetailNext && (
+                    <Link
+                      href={`/${params.idDoc}/${detail_documents.idDetailNext}`}
+                      className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
+                    >
+                      {detail_documents.nameDetailNext || 'Chương sau'} →
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* STORY INFO BOX */}
+              <div className="mt-8 p-4 bg-card rounded-lg border">
+                <h3 className="font-bold text-primary mb-2">Về truyện này</h3>
+                <p className="text-sm text-muted mb-3">
+                  Bạn đang đọc <strong>{detail_documents.nameChapter}</strong> thuộc truyện <strong>{infoDoc.name}</strong>
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                  <div>
+                    <span className="font-medium">Tác giả:</span> {infoDoc.authName}
                   </div>
-                )}
+                  <div>
+                    <span className="font-medium">Thể loại:</span> {infoDoc.genresName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Trạng thái:</span> {infoDoc.statusName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Lượt xem:</span> {infoDoc.view.toLocaleString()}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Link
+                    href={`/${params.idDoc}`}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                  >
+                    📖 Thông tin truyện
+                  </Link>
+                  <Link
+                    href="/"
+                    className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
+                  >
+                    🏠 Trang chủ
+                  </Link>
+                </div>
               </div>
 
             </div>
@@ -323,6 +510,100 @@ export default function StoryInfoPage({ params }: StoryInfoPageProps) {
         {/* FOOTER */}
         <FooterNav />
       </div>
+
+      {/* CHAPTER LIST POPUP */}
+      {chapterListState.isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            // Close popup when clicking on backdrop
+            if (e.target === e.currentTarget) {
+              handleCloseChapterList();
+            }
+          }}
+        >
+          <div className="bg-background border rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] flex flex-col">
+            {/* Popup Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-xl font-bold text-primary">
+                Danh sách chương - {state.storyDetail?.infoDoc.name}
+              </h2>
+              <button
+                onClick={handleCloseChapterList}
+                className="text-muted hover:text-body-primary transition-colors p-2"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Popup Content */}
+            <div className="flex-1 overflow-auto p-4">
+              {chapterListState.loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted">Đang tải danh sách chương...</p>
+                  </div>
+                </div>
+              ) : chapterListState.error ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <p className="text-red-500 mb-4">{chapterListState.error}</p>
+                    <button
+                      onClick={handleOpenChapterList}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                </div>
+              ) : chapterListState.chapters?.data ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {chapterListState.chapters.data.map((chapter: any, index: number) => (
+                    <Link
+                      key={chapter.idDetail || index}
+                      href={`/${params.idDoc}/${chapter.idDetail}`}
+                      onClick={handleCloseChapterList}
+                      className={`flex items-center justify-between p-3 rounded-lg border transition-colors group ${
+                        index === 0 
+                          ? 'border-blue-500' 
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <span className={`text-sm ${
+                        index === 0  
+                          ? 'font-bold text-blue-600' 
+                          : 'font-medium group-hover:text-primary'
+                      }`}>
+                        {chapter.nameChapter || `Chương ${index + 1}`}
+                      </span>
+                      <span className="text-xs text-muted">
+                        { new Date(chapter.date).toLocaleDateString("vi-VN")|| ''}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-12">
+                  <p className="text-muted">Không có chương nào</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Popup Footer */}
+            <div className="border-t p-4">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={handleCloseChapterList}
+                  className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
