@@ -29,6 +29,21 @@ export interface DomainConfig {
     yandexVerification?: string;
     baiduVerification?: string;
     naverVerification?: string;
+    // Enhanced AI and Search Engine Support
+    facebookVerification?: string;
+    pinterestVerification?: string;
+    alexaVerification?: string;
+    // AI Content Directives
+    aiTrainingAllowed?: boolean;
+    contentUsagePolicy?: 'open' | 'restricted' | 'training-allowed';
+    aiContentDeclaration?: 'human-authored' | 'ai-assisted' | 'ai-generated';
+    // Enhanced SEO Settings
+    structuredDataEnabled?: boolean;
+    richSnippetsEnabled?: boolean;
+    searchConsoleEnabled?: boolean;
+    // Performance Settings
+    preloadCriticalResources?: boolean;
+    enableAdvancedCaching?: boolean;
   };
   social?: {
     facebook?: string;

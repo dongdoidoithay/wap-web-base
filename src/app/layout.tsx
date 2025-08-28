@@ -60,9 +60,13 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     verification: {
-      google: 'your-google-verification-code',
-      yandex: 'your-yandex-verification-code',
+      google: config.seo?.googleVerification || 'your-google-verification-code',
+      yandex: config.seo?.yandexVerification || 'your-yandex-verification-code',
       yahoo: 'your-yahoo-verification-code',
+      other: {
+        'baidu-site-verification': config.seo?.baiduVerification || 'your-baidu-verification-code',
+        'naver-site-verification': config.seo?.naverVerification || 'your-naver-verification-code',
+      },
     },
   };
 }

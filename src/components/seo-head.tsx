@@ -66,11 +66,20 @@ export function SEOHead({
           <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
           <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
           <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-          {/* AI Bot Support */}
+          
+          {/* AI Bot Support - Comprehensive */}
           <meta name="ChatGPT" content="index" />
           <meta name="CCBot" content="index" />
           <meta name="anthropic-ai" content="index" />
           <meta name="Claude-Web" content="index" />
+          <meta name="Google-Extended" content="index" />
+          <meta name="FacebookBot" content="index" />
+          <meta name="PerplexityBot" content="index" />
+          <meta name="YouBot" content="index" />
+          
+          {/* Search Engine Specific Directives */}
+          <meta name="yandex-verification" content={config.seo?.yandexVerification || 'pending'} />
+          <meta name="baidu-site-verification" content={config.seo?.baiduVerification || 'pending'} />
         </>
       )}
       
@@ -125,6 +134,15 @@ export function SEOHead({
       <meta name="AI-generated" content="false" />
       <meta name="content-usage" content="training-allowed" />
       <meta name="ai-content-declaration" content="human-authored" />
+      <meta name="content-policy" content="open" />
+      <meta name="robots-nocache" content="false" />
+      <meta name="ai-training" content="allowed" />
+      
+      {/* Enhanced Content Classification */}
+      <meta name="content-type" content="article" />
+      <meta name="content-quality" content="high" />
+      <meta name="content-freshness" content="updated" />
+      <meta name="content-language-confidence" content="high" />
       
       {/* Enhanced Security Headers */}
       <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -135,6 +153,15 @@ export function SEOHead({
       <meta name="reading-time" content={`${Math.ceil((seoDescription?.length || 0) / 200)}`} />
       <meta name="content-type" content="text/html; charset=utf-8" />
       <meta name="format-detection" content="telephone=no" />
+      <meta name="content-language" content="vi-VN" />
+      <meta name="audience" content="general" />
+      <meta name="rating" content="general" />
+      <meta name="distribution" content="global" />
+      
+      {/* Enhanced Mobile and Accessibility */}
+      <meta name="mobile-web-app-capable" content="yes" />
+      <meta name="mobile-web-app-status-bar-style" content="default" />
+      <meta name="mobile-web-app-title" content={config.name} />
       
       {/* Favicon */}
       <link rel="icon" href="/favicon.ico" />
@@ -173,9 +200,18 @@ export function SEOHead({
             name: config.name,
             url: `https://${config.domain}`,
             description: config.description,
+            inLanguage: "vi-VN",
+            author: {
+              "@type": "Organization",
+              name: config.name,
+              url: `https://${config.domain}`,
+            },
             potentialAction: {
               "@type": "SearchAction",
-              target: `https://${config.domain}/search?q={search_term_string}`,
+              target: {
+                "@type": "EntryPoint",
+                urlTemplate: `https://${config.domain}/search?q={search_term_string}`,
+              },
               "query-input": "required name=search_term_string",
             },
             publisher: {
@@ -185,13 +221,31 @@ export function SEOHead({
               logo: {
                 "@type": "ImageObject",
                 url: `https://${config.domain}${config.logo}`,
+                width: 512,
+                height: 512,
               },
+              sameAs: [
+                config.social?.facebook,
+                config.social?.twitter,
+                config.social?.instagram,
+              ].filter(Boolean),
             },
-            inLanguage: "vi-VN",
             copyrightYear: new Date().getFullYear(),
             copyrightHolder: {
               "@type": "Organization",
               name: config.name,
+            },
+            mainEntity: {
+              "@type": "WebPage",
+              "@id": canonicalUrl,
+              url: canonicalUrl,
+              name: seoTitle,
+              description: seoDescription,
+              inLanguage: "vi-VN",
+              isPartOf: {
+                "@type": "WebSite",
+                "@id": `https://${config.domain}`,
+              },
             },
           }),
         }}
@@ -251,6 +305,7 @@ export function SEOHead({
               author: {
                 "@type": "Person",
                 name: article.author || config.name,
+                url: `https://${config.domain}/author/${encodeURIComponent(article.author || config.name)}`,
               },
               publisher: {
                 "@type": "Organization",
@@ -258,7 +313,10 @@ export function SEOHead({
                 logo: {
                   "@type": "ImageObject",
                   url: `https://${config.domain}${config.logo}`,
+                  width: 512,
+                  height: 512,
                 },
+                url: `https://${config.domain}`,
               },
               datePublished: article.publishedTime,
               dateModified: article.modifiedTime || article.publishedTime,
@@ -269,6 +327,21 @@ export function SEOHead({
               articleSection: article.section,
               keywords: article.tags?.join(', ') || seoKeywords.join(', '),
               inLanguage: "vi-VN",
+              wordCount: seoDescription?.length || 0,
+              genre: article.section || "Literature",
+              audience: {
+                "@type": "Audience",
+                audienceType: "general public",
+              },
+              isAccessibleForFree: true,
+              usageInfo: "https://schema.org/usageInfo",
+              copyrightHolder: {
+                "@type": "Organization",
+                name: config.name,
+              },
+              copyrightYear: new Date().getFullYear(),
+              license: "https://creativecommons.org/licenses/by/4.0/",
+              encodingFormat: "text/html",
             }),
           }}
         />
