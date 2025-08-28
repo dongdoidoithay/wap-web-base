@@ -225,3 +225,76 @@ export interface Chapter {
   views?: number;
   order?: number;
 }
+
+// Authentication interfaces
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
+  isEmailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string;
+  role?: 'user' | 'admin' | 'moderator';
+}
+
+export interface AuthCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  username: string;
+  password: string;
+  confirmPassword: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  user?: User;
+  token?: string;
+  message?: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface ForgotPasswordData {
+  email: string;
+}
+
+export interface ResetPasswordData {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface AuthFormState {
+  isLoading: boolean;
+  error: string | null;
+  success: string | null;
+}
+
+export interface PasswordResetToken {
+  token: string;
+  email: string;
+  expiresAt: string;
+  isUsed: boolean;
+}
+
+export interface EmailVerificationToken {
+  token: string;
+  email: string;
+  expiresAt: string;
+  isUsed: boolean;
+}

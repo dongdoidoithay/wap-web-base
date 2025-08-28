@@ -1,0 +1,8 @@
+cấu trúc Project:
+1. src: chứa các file source code
+1.1. src/app :  chứa các file layout, robots, sitemap
+1.2. src/components: chứa các component
+1.3. src/hooks: chứa các hook
+1.4. src/lib: chứa các function xử lý logic
+1.3. src/services: chứa các service xử lý logic API
+2. public: chứ các file static domains-config

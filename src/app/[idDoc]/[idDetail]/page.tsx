@@ -574,7 +574,7 @@ console.log('reading---1')
                       <span className={`text-sm ${
                         chapter.idDetail === params.idDetail 
                           ? 'font-bold text-blue-600' 
-                          : 'font-medium group-hover:text-primary'
+                          : 'font-medium group-hover:text-primary text-muted'
                       }`}>
                         {chapter.nameChapter || `Chương ${index + 1}`}
                       </span>

@@ -32,5 +32,8 @@ export { PerformanceIndicators } from './performance-indicators';
 // Development Components
 export { DebugPanel } from './debug-panel';
 
+// Authentication Components
+export { default as FormInput } from './form-input';
+export { default as FormButton } from './form-button';
 // Example usage:
 // import { Header, SearchBar, LoadingSkeleton, StoryCard } from '@/components/ui';
