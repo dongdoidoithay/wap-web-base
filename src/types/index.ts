@@ -298,3 +298,35 @@ export interface EmailVerificationToken {
   expiresAt: string;
   isUsed: boolean;
 }
+
+// Reading History interfaces for local storage
+export interface ReadingHistoryItem {
+  idDoc: string;
+  idDetail: string;
+  storyName: string;
+  chapterName: string;
+  currentChapterIndex: number;
+  totalChapters: number;
+  lastReadAt: string;
+  storyImage?: string;
+  storyAuthor?: string;
+  storyGenres?: string;
+  chapterDate?: string;
+  storyUrl: string;
+  chapterUrl: string;
+}
+
+export interface ReadingHistoryState {
+  items: ReadingHistoryItem[];
+  loading: boolean;
+  error: string | null;
+}
+
+export interface ReadingHistoryManager {
+  getHistory: () => ReadingHistoryItem[];
+  addOrUpdateHistory: (item: ReadingHistoryItem) => void;
+  removeFromHistory: (idDoc: string) => void;
+  clearHistory: () => void;
+  getStoryHistory: (idDoc: string) => ReadingHistoryItem | null;
+  getRecentStories: (limit?: number) => ReadingHistoryItem[];
+}

@@ -21,6 +21,7 @@ import {
 
 // Hooks and Services
 import { useDomain } from '@/hooks/use-domain';
+import { useReadingHistory } from '@/lib/reading-history';
 import { 
   fetchLatestStories, 
   fetchTopFollowStories, 
@@ -34,6 +35,7 @@ import {
 // Types
 import type { HomePageProps } from '@/types';
 import type { StoryItem } from '@/types';
+import Link from 'next/link';
 
 // Progressive Data Types (inline)
 interface ProgressiveHomeData {
@@ -77,6 +79,12 @@ export default function Home({ searchParams }: HomePageProps) {
   // ========================
   const domainConfig = useDomain();
   const isConfigLoading = !domainConfig;
+
+  // ========================
+  // 1.1. READING HISTORY
+  // ========================
+  const { history: readingHistory } = useReadingHistory();
+  const [recentReadStories, setRecentReadStories] = useState<any[]>([]);
 
   // ========================
   // 2. SEARCH PARAMS RESOLUTION
@@ -357,6 +365,13 @@ export default function Home({ searchParams }: HomePageProps) {
       fetchAllData(currentPageFromParams);
   }, []);
 
+  // Load recent reading history
+  useEffect(() => {
+    // Use the first 3 items from readingHistory
+    const recent = readingHistory.slice(0, 3);
+    setRecentReadStories(recent);
+  }, [readingHistory]); // Depend on readingHistory array instead of function
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -409,12 +424,59 @@ export default function Home({ searchParams }: HomePageProps) {
         {/* HEADER */}
         <Header config={domainConfig} />
         
-        <main>
+        <main className="pb-24">
           {/* SEARCH SECTION */}
           <SearchBar />
           
           {/* CATEGORIES */}
           <CategoryChips categories={domainConfig.content?.categories || []} />
+          
+          {/* RECENT READING HISTORY - Shows only if user has reading history */}
+          {recentReadStories.length > 0 && (
+            <StorySection
+              title="📚 Đọc Gần Đây"
+              actions={
+                <Link 
+                  href="/reading-history" 
+                  className="text-sm text-muted hover:text-primary transition-colors"
+                >
+                  Xem tất cả →
+                </Link>
+              }
+            >
+              <div className="space-y-3">
+                {recentReadStories.map((story, index) => (
+                  <Link
+                    key={story.idDoc}
+                    href={story.chapterUrl}
+                    className="flex items-center gap-3 p-3 bg-background rounded-lg border hover:border-primary/50 transition-all group"
+                  >
+                   
+                    {story.storyImage && (
+                      <img 
+                        src={story.storyImage} 
+                        alt={story.storyName}
+                        className="w-12 h-16 object-cover rounded flex-shrink-0"
+                        loading="lazy"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm text-body-primary group-hover:text-primary transition-colors truncate">
+                        {story.storyName}
+                      </h3>
+                      <p className="text-xs text-muted mb-1 truncate">
+                        {story.chapterName}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-muted">
+                        <span>Chương {story.currentChapterIndex + 1}/{story.totalChapters}</span>
+                        <span>{new Date(story.lastReadAt).toLocaleDateString('vi-VN')}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </StorySection>
+          )}
           
           {/* MAIN CONTENT - PROGRESSIVE RENDERING */}
           <ApiErrorBoundary>
@@ -422,16 +484,15 @@ export default function Home({ searchParams }: HomePageProps) {
               
               {/* LATEST STORIES SECTION - Renders immediately when loaded */}
               <StorySection
-                title="🔥 Truyện Mới Cập Nhật"
-                error={progressiveData.latestStories.error}
-                                  actions={
-                    <button
-                      onClick={() => handleRefreshSection('latest')}
-                      disabled={progressiveData.latestStories.loading}
-                      className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 disabled:opacity-50"
+                  title="🔥 Truyện Mới Cập Nhật"
+                  error={progressiveData.latestStories.error}
+                  actions={
+                   <Link 
+                      href="/truyen-moi-cap-nhat?page=1" 
+                      className="text-sm text-muted hover:text-primary transition-colors"
                     >
-                      {progressiveData.latestStories.loading ? '⏳' : '🔄'}
-                    </button>
+                      Xem thêm →
+                    </Link>
                   }
               >
                 {progressiveData.latestStories.loading && (
@@ -467,15 +528,7 @@ export default function Home({ searchParams }: HomePageProps) {
                 <StorySection 
                   title="🏆 Top Truyện Được Theo Dõi Nhiều"
                   error={progressiveData.topFollowStories.error}
-                  actions={
-                    <button
-                      onClick={() => handleRefreshSection('topFollow')}
-                      disabled={progressiveData.topFollowStories.loading}
-                      className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 disabled:opacity-50"
-                    >
-                      {progressiveData.topFollowStories.loading ? '⏳' : '🔄'}
-                    </button>
-                  }
+                  
                 >
                   {progressiveData.topFollowStories.loading ? (
                     <div className="grid grid-cols-2 gap-4">
@@ -498,15 +551,6 @@ export default function Home({ searchParams }: HomePageProps) {
                 <StorySection 
                   title="🔥 Top Xem Trong Ngày"
                   error={progressiveData.topDayStories.error}
-                  actions={
-                    <button
-                      onClick={() => handleRefreshSection('topDay')}
-                      disabled={progressiveData.topDayStories.loading}
-                      className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded hover:bg-secondary/90 disabled:opacity-50"
-                    >
-                      {progressiveData.topDayStories.loading ? '⏳' : '🔄'}
-                    </button>
-                  }
                 >
                   {progressiveData.topDayStories.loading ? (
                     <div className="space-y-2">

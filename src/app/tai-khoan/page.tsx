@@ -76,7 +76,7 @@ const DashboardPage = () => {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-24">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* User Info Card */}
           <div className="bg-surface rounded-lg shadow-md p-6 border border-default">

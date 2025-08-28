@@ -10,6 +10,7 @@ import { ApiErrorBoundary } from '@/components/api-error-boundary';
 import { Header, FooterNav } from '@/components/ui';
 import { fetchStoryDetail, fetchStoryListChapter } from '@/services/story-detail.service';
 import { getCachedStoryDetail } from '@/lib/cached-story-detail';
+import { readingHistoryManager } from '@/lib/reading-history';
 
 interface StoryReadingPageProps {
   params: Promise<{
@@ -110,6 +111,12 @@ console.log('reading---1')
     initialized: false,
   });
 
+  // Reading history state
+  const [currentReadingChapter, setCurrentReadingChapter] = useState<{
+    idDetail: string;
+    chapterName: string;
+  } | null>(null);
+
   // Chapter list popup state
   const [chapterListState, setChapterListState] = useState({
     isOpen: false,
@@ -129,8 +136,18 @@ console.log('reading---1')
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       try {
+        let _idDetail = "_"
+        const storyHistory = readingHistoryManager.getStoryHistory(params.idDoc);
+        if (storyHistory) {
+          _idDetail=storyHistory.idDetail;
+          setCurrentReadingChapter({
+          idDetail: storyHistory.idDetail,
+          chapterName: storyHistory.chapterName
+        });
+        } 
+
         // Use cached data from layout instead of calling API again
-        const result = await getCachedStoryDetail(params.idDoc, "_");
+        const result = await getCachedStoryDetail(params.idDoc, _idDetail);
         console.log('reading---2 (using cached data)',result);
         if (result.success && result.data) {
           // Handle the API response structure
@@ -165,6 +182,19 @@ console.log('reading---1')
       if(!isConfigLoading)
       loadChapterContent();
   }, [params.idDoc ,isConfigLoading]);
+
+  // Load current reading chapter from history
+/*   useEffect(() => {
+    if (state.storyDetail && typeof window !== 'undefined') {
+      const storyHistory = readingHistoryManager.getStoryHistory(params.idDoc);
+      if (storyHistory) {
+        setCurrentReadingChapter({
+          idDetail: storyHistory.idDetail,
+          chapterName: storyHistory.chapterName
+        });
+      } 
+    }
+  }, []); */
 
   // ========================
   // 4. CHAPTER LIST FUNCTIONS
@@ -258,7 +288,7 @@ console.log('reading---1')
         />
         <div className="min-h-dvh bg-background text-body-primary">
           <Header config={domainConfig} />
-          <main className="container mx-auto px-4 py-6">
+          <main className="container mx-auto px-4 py-6 pb-24">
             <StoryListSkeleton count={1} />
           </main>
           <FooterNav />
@@ -276,7 +306,7 @@ console.log('reading---1')
         />
         <div className="min-h-dvh bg-background text-body-primary">
           <Header config={domainConfig} />
-          <main className="container mx-auto px-4 py-6">
+          <main className="container mx-auto px-4 py-6 pb-24">
             <div className="text-center py-12">
               <h1 className="text-2xl font-bold text-primary mb-4">
                 Không tìm thấy chương
@@ -357,7 +387,7 @@ console.log('reading---1')
 
         <main>
           <ApiErrorBoundary>
-            <div className="container mx-auto px-4 py-6 max-w-4xl">
+            <div className="container mx-auto px-4 py-6 max-w-4xl pb-24">
               
               {/* BREADCRUMB */}
               <nav className="flex items-center space-x-2 text-sm text-muted mb-6">
@@ -473,6 +503,18 @@ console.log('reading---1')
                 <p className="text-sm text-muted mb-3">
                   Bạn đang đọc <strong>{detail_documents.nameChapter}</strong> thuộc truyện <strong>{infoDoc.name}</strong>
                 </p>
+                
+                {/* Reading Progress from LocalStorage */}
+                {currentReadingChapter && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-green-600">📍</span>
+                      <span className="font-medium text-green-700">
+                        Chương đang đọc: {currentReadingChapter.chapterName}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
                   <div>
                     <span className="font-medium">Tác giả:</span> {infoDoc.authName}
@@ -488,6 +530,16 @@ console.log('reading---1')
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {/* Continue Reading Button - Shows saved chapter from localStorage */}
+                  {currentReadingChapter && (
+                    <Link
+                      href={`/${params.idDoc}/${currentReadingChapter.idDetail}`}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+                      title={`Tiếp tục đọc: ${currentReadingChapter.chapterName}`}
+                    >
+                      📚 Tiếp tục đọc
+                    </Link>
+                  )}
                   <Link
                     href={`/${params.idDoc}`}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"

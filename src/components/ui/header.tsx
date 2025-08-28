@@ -18,6 +18,9 @@ export function Header({ config }: HeaderProps) {
           <span className="font-semibold tracking-tight text-body-primary">{config.name}</span>
         </Link>
         <nav className="flex items-center gap-2">
+          <Link href="/reading-history" className="text-sm text-body-secondary hover:text-primary transition-colors flex items-center gap-1">
+            📚 Lịch sử
+          </Link>
           <Link href="/chuyen-muc" className="text-sm text-body-secondary hover:text-primary transition-colors">
             Chuyên mục
           </Link>
