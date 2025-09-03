@@ -32,7 +32,7 @@ interface StoryCardProps {
 }
 
 export function StoryCard({ story, index, showImages, variant = 'list' }: StoryCardProps) {
-  console.log('StoryCard', story);
+  
   // Generate proper link to story detail page
   const getStoryLink = (story: StoryItem) => {
     if (story.idDoc) {

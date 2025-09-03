@@ -176,364 +176,9 @@ console.log('reading---1')
   const contentRef = useRef<HTMLDivElement>(null);
 
   // ========================
-  // 3. DATA LOADING
+  // 3. TTS CONTROL FUNCTIONS (Moved to top to fix hook order)
   // ========================
-  useEffect(() => {
-    const loadChapterContent = async () => {
-      console.log('reading---1#',params);
-      if (!params.idDoc ) return;
-
-      setState(prev => ({ ...prev, loading: true, error: null }));
-
-      try {
-        let _idDetail = "_"
-        const storyHistory = readingHistoryManager.getStoryHistory(params.idDoc);
-        if (storyHistory) {
-          _idDetail=storyHistory.idDetail;
-          setCurrentReadingChapter({
-          idDetail: storyHistory.idDetail,
-          chapterName: storyHistory.chapterName
-        });
-        } 
-
-        // Use cached data from layout instead of calling API again
-        const result = await getCachedStoryDetail(params.idDoc, _idDetail);
-        console.log('reading---2 (using cached data)',result);
-        if (result.success && result.data) {
-          // Handle the API response structure
-          const apiData = result.data as any;
-          
-          // The fetchStoryDetail should return the full API response structure
-          if (apiData && apiData.data && apiData.data.detail_documents) {
-            setState(prev => ({
-              ...prev,
-              storyDetail: apiData.data,
-              loading: false,
-              initialized: true,
-              error: null
-            }));
-          } else {
-            notFound();
-          }
-        } else {
-          notFound();
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load chapter';
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: errorMessage,
-          initialized: true
-        }));
-      }
-    };
-
-      if(!isConfigLoading)
-      loadChapterContent();
-  }, [params.idDoc ,isConfigLoading]);
-
-  // Load current reading chapter from history
-/*   useEffect(() => {
-    if (state.storyDetail && typeof window !== 'undefined') {
-      const storyHistory = readingHistoryManager.getStoryHistory(params.idDoc);
-      if (storyHistory) {
-        setCurrentReadingChapter({
-          idDetail: storyHistory.idDetail,
-          chapterName: storyHistory.chapterName
-        });
-      } 
-    }
-  }, []); */
-
-  // ========================
-  // 4. CHAPTER LIST FUNCTIONS
-  // ========================
-  const handleOpenChapterList = async () => {
-    if (chapterListState.chapters) {
-      // If chapters already loaded, just open popup
-      setChapterListState(prev => ({ ...prev, isOpen: true }));
-      return;
-    }
-
-    // Show loading state and open popup
-    setChapterListState(prev => ({ 
-      ...prev, 
-      isOpen: true, 
-      loading: true, 
-      error: null 
-    }));
-
-    try {
-      const result = await fetchStoryListChapter(params.idDoc);
-      
-      if (result.success && result.data) {
-        console.log('result.data', result.data);
-        setChapterListState(prev => ({
-          ...prev,
-          chapters: result.data,
-          loading: false,
-          error: null
-        }));
-      } else {
-        setChapterListState(prev => ({
-          ...prev,
-          loading: false,
-          error: result.message || 'Không thể tải danh sách chương'
-        }));
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Lỗi khi tải danh sách chương';
-      setChapterListState(prev => ({
-        ...prev,
-        loading: false,
-        error: errorMessage
-      }));
-    }
-  };
-
-  const handleCloseChapterList = () => {
-    setChapterListState(prev => ({ ...prev, isOpen: false }));
-  };
-
-  // Keyboard support for closing popup
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && chapterListState.isOpen) {
-        handleCloseChapterList();
-      }
-    };
-
-    if (chapterListState.isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      // Prevent body scroll when popup is open
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [chapterListState.isOpen]);
-
-  // ========================
-  // 4.1. TEXT-TO-SPEECH FUNCTIONS
-  // ========================
-  
-  // Initialize TTS when component mounts
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      speechSynthRef.current = window.speechSynthesis;
-      
-      // Load available voices
-      const loadVoices = () => {
-        const allVoices = speechSynthRef.current?.getVoices() || [];
-        console.log('🎙️ All available voices:', allVoices.map(v => ({ name: v.name, lang: v.lang, localService: v.localService })));
-        
-        // Enhanced Vietnamese voice detection
-        const vietnameseVoices = allVoices.filter(voice => {
-          const lang = voice.lang.toLowerCase();
-          const name = voice.name.toLowerCase();
-          return (
-            lang.includes('vi-') || 
-            lang.includes('vi_') ||
-            lang === 'vi' ||
-            name.includes('vietnamese') ||
-            name.includes('việt') ||
-            name.includes('viet')
-          );
-        });
-        
-        console.log('🇻🇳 Vietnamese voices found:', vietnameseVoices);
-        
-        // If no Vietnamese voices, look for high-quality voices that work well with Vietnamese
-        let availableVoices = vietnameseVoices;
-        if (vietnameseVoices.length === 0) {
-          console.log('⚠️ No Vietnamese voices found, using alternative voices');
-          // Prefer local voices and common languages that can handle Vietnamese text
-          const fallbackVoices = allVoices.filter(voice => {
-            const lang = voice.lang.toLowerCase();
-            const name = voice.name.toLowerCase();
-            return (
-              voice.localService || // Prefer local voices
-              lang.includes('en-') || // English voices often work well
-              lang.includes('zh-') || // Chinese voices for tonal languages
-              name.includes('natural') ||
-              name.includes('neural') ||
-              name.includes('premium')
-            );
-          });
-          availableVoices = fallbackVoices.length > 0 ? fallbackVoices.slice(0, 10) : allVoices.slice(0, 10);
-        }
-        
-        console.log('✅ Using voices:', availableVoices);
-        
-        setTtsState(prev => ({
-          ...prev,
-          availableVoices,
-          selectedVoice: availableVoices[0]?.voiceURI || ''
-        }));
-      };
-      
-      // Load voices with proper timing
-      const handleVoicesChanged = () => {
-        console.log('🔄 Voices changed event triggered');
-        setTimeout(loadVoices, 100); // Small delay to ensure voices are loaded
-      };
-      
-      // Load voices immediately
-      loadVoices();
-      
-      // Also load when voices change (some browsers load voices asynchronously)
-      speechSynthRef.current.addEventListener('voiceschanged', handleVoicesChanged);
-      
-      // Force reload after a short delay for browsers that load voices asynchronously
-      const timeout = setTimeout(() => {
-        console.log('🔄 Force reloading voices after delay');
-        loadVoices();
-      }, 1000);
-      
-      return () => {
-        speechSynthRef.current?.removeEventListener('voiceschanged', handleVoicesChanged);
-        clearTimeout(timeout);
-      };
-    }
-  }, []);
-  
-  // Parse content into sentences when story data is loaded
-  useEffect(() => {
-    if (state.storyDetail?.detail_documents.source) {
-      const content = state.storyDetail.detail_documents.source;
-    
-    const sentences = subContent(content);
-      setTtsState(prev => ({
-        ...prev,
-        sentences,
-        currentSentence: 0
-      }));
-      
-      // Auto-play if coming from auto-next
-      if (shouldAutoPlay && sentences.length > 0) {
-        console.log('🔊 Auto-playing new chapter from auto-next');
-        setShouldAutoPlay(false);
-        // Start playing after a short delay to ensure TTS is ready
-        setTimeout(() => {
-          setTtsState(prev => ({ ...prev, isPlaying: true }));
-        }, 500);
-      }
-    }
-  }, [state.storyDetail, shouldAutoPlay]);
-
-  // ========================
-  // 5. LOADING STATE
-  // ========================
-  if (isConfigLoading || !domainConfig) {
-    return (
-      <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (state.loading) {
-    return (
-      <>
-        <SEOHead 
-          title="Đang tải chương..."
-          description="Đang tải nội dung chương"
-        />
-        <div className="min-h-dvh bg-background text-body-primary">
-          <Header config={domainConfig} />
-          <main className="container mx-auto px-4 py-6 pb-24">
-            <StoryListSkeleton count={1} />
-          </main>
-          <FooterNav />
-        </div>
-      </>
-    );
-  }
-
-  if (state.error || !state.storyDetail) {
-    return (
-      <>
-        <SEOHead 
-          title="Lỗi tải chương"
-          description="Không thể tải nội dung chương"
-        />
-        <div className="min-h-dvh bg-background text-body-primary">
-          <Header config={domainConfig} />
-          <main className="container mx-auto px-4 py-6 pb-24">
-            <div className="text-center py-12">
-              <h1 className="text-2xl font-bold text-primary mb-4">
-                Không tìm thấy chương
-              </h1>
-              <p className="text-muted mb-6">
-                {state.error || 'Chương không tồn tại hoặc đã bị xóa'}
-              </p>
-              <Link 
-                href={`/`}
-                className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                Về trang chủ
-              </Link>
-            </div>
-          </main>
-          <FooterNav />
-        </div>
-      </>
-    );
-  }
-
-  const { detail_documents, infoDoc } = state.storyDetail;
-  
-  // Format content based on type
-  const formatContent = (content: string) => {
-    // Get the selected chip type from localStorage
-    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
-    
-    // If type is manga, process content as images separated by #
-    if (selectedType === 'manga') {
-      const imageUrls = content.split('#').filter(url => url.trim().length > 0);
-      return imageUrls.map(url => `<img src="${url.trim()}" alt="Manga page" class="w-full h-auto mb-4" />`).join('\n');
-    }
-    
-    // Default behavior for novel and other types (text content)
-    return content
-      .split('\r\n\r\n')
-      .map(paragraph => paragraph.trim())
-      .filter(paragraph => paragraph.length > 0)
-      .map(paragraph => `<p>${paragraph.replace(/\r\n/g, '<br>')}</p>`)
-      .join('\n');
-  };
-  
-  const subContent = (content: string) => {
-    // Split content into sentences for TTS
-    // For novels: split by paragraph breaks
-    // For manga: return empty array as we don't read images
-    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
-    
-    if (selectedType === 'manga') {
-      return []; // No TTS for manga content
-    }
-    
-    // For novel content, split by paragraph breaks and filter empty paragraphs
-    return content
-      .split('\r\n\r\n')
-      .map(paragraph => paragraph.trim())
-      .filter(paragraph => paragraph.length > 0);
-  };
-  
-  const formattedContent = formatContent(detail_documents.source);
-console.log('formattedContent', infoDoc);
-
-  // ========================
-  // 5. RENDER CHAPTER CONTENT
-  // ========================
-
-  // TTS Control Functions
-  const ttsControls: TTSControls = {
+  const ttsControls = {
     play: useCallback(() => {
       if (!speechSynthRef.current || ttsState.sentences.length === 0) return;
       
@@ -647,7 +292,256 @@ console.log('formattedContent', infoDoc);
       setTtsState(prev => ({ ...prev, autoNext: !prev.autoNext }));
     }, [])
   };
+
+  // ========================
+  // 4. DATA LOADING
+  // ========================
+  useEffect(() => {
+    const loadChapterContent = async () => {
+      console.log('reading---1#',params);
+      if (!params.idDoc ) return;
+
+      setState(prev => ({ ...prev, loading: true, error: null }));
+
+      try {
+        let _idDetail = "_"
+        const storyHistory = readingHistoryManager.getStoryHistory(params.idDoc);
+        if (storyHistory) {
+          _idDetail=storyHistory.idDetail;
+          setCurrentReadingChapter({
+          idDetail: storyHistory.idDetail,
+          chapterName: storyHistory.chapterName
+        });
+        } 
+
+        // Use cached data from layout instead of calling API again
+        const result = await getCachedStoryDetail(params.idDoc, _idDetail);
+        console.log('reading---2 (using cached data)',result);
+        if (result.success && result.data) {
+          // Handle the API response structure
+          const apiData = result.data as any;
+          
+          // The fetchStoryDetail should return the full API response structure
+          if (apiData && apiData.data && apiData.data.detail_documents) {
+            setState(prev => ({
+              ...prev,
+              storyDetail: apiData.data,
+              loading: false,
+              initialized: true,
+              error: null
+            }));
+          } else {
+            notFound();
+          }
+        } else {
+          notFound();
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load chapter';
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          error: errorMessage,
+          initialized: true
+        }));
+      }
+    };
+
+      if(!isConfigLoading)
+      loadChapterContent();
+  }, [params.idDoc ,isConfigLoading]);
+
+  // Load current reading chapter from history
+/*   useEffect(() => {
+    if (state.storyDetail && typeof window !== 'undefined') {
+      const storyHistory = readingHistoryManager.getStoryHistory(params.idDoc);
+      if (storyHistory) {
+        setCurrentReadingChapter({
+          idDetail: storyHistory.idDetail,
+          chapterName: storyHistory.chapterName
+        });
+      } 
+    }
+  }, []); */
+
+  // ========================
+  // 5. CHAPTER LIST FUNCTIONS
+  // ========================
+  const handleOpenChapterList = async () => {
+    if (chapterListState.chapters) {
+      // If chapters already loaded, just open popup
+      setChapterListState(prev => ({ ...prev, isOpen: true }));
+      return;
+    }
+
+    // Show loading state and open popup
+    setChapterListState(prev => ({ 
+      ...prev, 
+      isOpen: true, 
+      loading: true, 
+      error: null 
+    }));
+
+    try {
+      const result = await fetchStoryListChapter(params.idDoc);
+      
+      if (result.success && result.data) {
+        console.log('result.data', result.data);
+        setChapterListState(prev => ({
+          ...prev,
+          chapters: result.data,
+          loading: false,
+          error: null
+        }));
+      } else {
+        setChapterListState(prev => ({
+          ...prev,
+          loading: false,
+          error: result.message || 'Không thể tải danh sách chương'
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Lỗi khi tải danh sách chương';
+      setChapterListState(prev => ({
+        ...prev,
+        loading: false,
+        error: errorMessage
+      }));
+    }
+  };
+
+  const handleCloseChapterList = () => {
+    setChapterListState(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Keyboard support for closing popup
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && chapterListState.isOpen) {
+        handleCloseChapterList();
+      }
+    };
+
+    if (chapterListState.isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when popup is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [chapterListState.isOpen]);
+
+  // ========================
+  // 6. TEXT-TO-SPEECH FUNCTIONS
+  // ========================
   
+  // Initialize TTS when component mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      speechSynthRef.current = window.speechSynthesis;
+      
+      // Load available voices
+      const loadVoices = () => {
+        const allVoices = speechSynthRef.current?.getVoices() || [];
+        console.log('🎙️ All available voices:', allVoices.map(v => ({ name: v.name, lang: v.lang, localService: v.localService })));
+        
+        // Enhanced Vietnamese voice detection
+        const vietnameseVoices = allVoices.filter(voice => {
+          const lang = voice.lang.toLowerCase();
+          const name = voice.name.toLowerCase();
+          return (
+            lang.includes('vi-') || 
+            lang.includes('vi_') ||
+            lang === 'vi' ||
+            name.includes('vietnamese') ||
+            name.includes('việt') ||
+            name.includes('viet')
+          );
+        });
+        
+        console.log('🇻🇳 Vietnamese voices found:', vietnameseVoices);
+        
+        // If no Vietnamese voices, look for high-quality voices that work well with Vietnamese
+        let availableVoices = vietnameseVoices;
+        if (vietnameseVoices.length === 0) {
+          console.log('⚠️ No Vietnamese voices found, using alternative voices');
+          // Prefer local voices and common languages that can handle Vietnamese text
+          const fallbackVoices = allVoices.filter(voice => {
+            const lang = voice.lang.toLowerCase();
+            const name = voice.name.toLowerCase();
+            return (
+              voice.localService || // Prefer local voices
+              lang.includes('en-') || // English voices often work well
+              lang.includes('zh-') || // Chinese voices for tonal languages
+              name.includes('natural') ||
+              name.includes('neural') ||
+              name.includes('premium')
+            );
+          });
+          availableVoices = fallbackVoices.length > 0 ? fallbackVoices.slice(0, 10) : allVoices.slice(0, 10);
+        }
+        
+        console.log('✅ Using voices:', availableVoices);
+        
+        setTtsState(prev => ({
+          ...prev,
+          availableVoices,
+          selectedVoice: availableVoices[0]?.voiceURI || ''
+        }));
+      };
+      
+      // Load voices with proper timing
+      const handleVoicesChanged = () => {
+        console.log('🔄 Voices changed event triggered');
+        setTimeout(loadVoices, 100); // Small delay to ensure voices are loaded
+      };
+      
+      // Load voices immediately
+      loadVoices();
+      
+      // Also load when voices change (some browsers load voices asynchronously)
+      speechSynthRef.current.addEventListener('voiceschanged', handleVoicesChanged);
+      
+      // Force reload after a short delay for browsers that load voices asynchronously
+      const timeout = setTimeout(() => {
+        console.log('🔄 Force reloading voices after delay');
+        loadVoices();
+      }, 1000);
+      
+      return () => {
+        speechSynthRef.current?.removeEventListener('voiceschanged', handleVoicesChanged);
+        clearTimeout(timeout);
+      };
+    }
+  }, []);
+  
+  // Parse content into sentences when story data is loaded
+  useEffect(() => {
+    if (state.storyDetail?.detail_documents.source) {
+      const content = state.storyDetail.detail_documents.source;
+    
+    const sentences = subContent(content);
+      setTtsState(prev => ({
+        ...prev,
+        sentences,
+        currentSentence: 0
+      }));
+      
+      // Auto-play if coming from auto-next
+      if (shouldAutoPlay && sentences.length > 0) {
+        console.log('🔊 Auto-playing new chapter from auto-next');
+        setShouldAutoPlay(false);
+        // Start playing after a short delay to ensure TTS is ready
+        setTimeout(() => {
+          setTtsState(prev => ({ ...prev, isPlaying: true }));
+        }, 500);
+      }
+    }
+  }, [state.storyDetail, shouldAutoPlay]);
+
   // Auto-resume TTS when sentence changes (but not during natural progression or initial auto-play)
   useEffect(() => {
     // Only auto-resume if:
@@ -686,6 +580,117 @@ console.log('formattedContent', infoDoc);
       }
     };
   }, []);
+
+  // ========================
+  // 7. HELPER FUNCTIONS
+  // ========================
+  
+  // Format content based on type
+  const formatContent = (content: string) => {
+    // Get the selected chip type from localStorage
+    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+    
+    // If type is manga, process content as images separated by #
+    if (selectedType === 'manga') {
+      const imageUrls = content.split('#').filter(url => url.trim().length > 0);
+      return imageUrls.map(url => `<img src="${url.trim()}" alt="Manga page" class="w-full h-auto mb-4" />`).join('\n');
+    }
+    
+    // Default behavior for novel and other types (text content)
+    return content
+      .split('\r\n\r\n')
+      .map(paragraph => paragraph.trim())
+      .filter(paragraph => paragraph.length > 0)
+      .map(paragraph => `<p>${paragraph.replace(/\r\n/g, '<br>')}</p>`)
+      .join('\n');
+  };
+  
+  const subContent = (content: string) => {
+    // Split content into sentences for TTS
+    // For novels: split by paragraph breaks
+    // For manga: return empty array as we don't read images
+    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+    
+    if (selectedType === 'manga') {
+      return []; // No TTS for manga content
+    }
+    
+    // For novel content, split by paragraph breaks and filter empty paragraphs
+    return content
+      .split('\r\n\r\n')
+      .map(paragraph => paragraph.trim())
+      .filter(paragraph => paragraph.length > 0);
+  };
+
+  // ========================
+  // 8. LOADING STATE
+  // ========================
+  if (isConfigLoading || !domainConfig) {
+    return (
+      <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-muted">Đang tải cấu hình...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.loading) {
+    return (
+      <>
+        <SEOHead 
+          title="Đang tải chương..."
+          description="Đang tải nội dung chương"
+        />
+        <div className="min-h-dvh bg-background text-body-primary">
+          <Header config={domainConfig} />
+          <main className="container mx-auto px-4 py-6 pb-24">
+            <StoryListSkeleton count={1} />
+          </main>
+          <FooterNav />
+        </div>
+      </>
+    );
+  }
+
+  if (state.error || !state.storyDetail) {
+    return (
+      <>
+        <SEOHead 
+          title="Lỗi tải chương"
+          description="Không thể tải nội dung chương"
+        />
+        <div className="min-h-dvh bg-background text-body-primary">
+          <Header config={domainConfig} />
+          <main className="container mx-auto px-4 py-6 pb-24">
+            <div className="text-center py-12">
+              <h1 className="text-2xl font-bold text-primary mb-4">
+                Không tìm thấy chương
+              </h1>
+              <p className="text-muted mb-6">
+                {state.error || 'Chương không tồn tại hoặc đã bị xóa'}
+              </p>
+              <Link 
+                href={`/`}
+                className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Về trang chủ
+              </Link>
+            </div>
+          </main>
+          <FooterNav />
+        </div>
+      </>
+    );
+  }
+
+  const { detail_documents, infoDoc } = state.storyDetail;
+  const formattedContent = formatContent(detail_documents.source);
+console.log('formattedContent', infoDoc);
+
+  // ========================
+  // 9. RENDER CHAPTER CONTENT
+  // ========================
 
   return (
     <>

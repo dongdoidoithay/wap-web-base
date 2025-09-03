@@ -175,12 +175,22 @@ console.log('reading---1')
   const [shouldAutoPlay, setShouldAutoPlay] = useState(
     (resolvedSearchParams?.autoplay as string) === 'true' || false
   );
+  const [selectedChipType, setSelectedChipType] = useState<string | null>(null);
   const speechSynthRef = useRef<SpeechSynthesis | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // ========================
-  // 3. DATA LOADING
+  // 3. CHIP TYPE DETECTION
+  // ========================
+  useEffect(() => {
+    // Get the selected chip type from localStorage
+    const chipType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+    setSelectedChipType(chipType);
+  }, []);
+
+  // ========================
+  // 4. DATA LOADING
   // ========================
   useEffect(() => {
     const loadChapterContent = async () => {
@@ -211,6 +221,9 @@ console.log('reading---1')
             
             // Save to reading history after successful load
             try {
+              // Get the selected chip type from localStorage
+              const chipType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+              
               const historyItem = createReadingHistoryItem({
                 idDoc: params.idDoc,
                 idDetail: params.idDetail,
@@ -248,10 +261,10 @@ console.log('reading---1')
 
       if(!isConfigLoading)
       loadChapterContent();
-  }, [params.idDoc ,params.idDetail,isConfigLoading]);
+  }, [params.idDoc ,params.idDetail,isConfigLoading, selectedChipType]); // Add selectedChipType as dependency
 
   // ========================
-  // 4. CHAPTER LIST FUNCTIONS
+  // 5. CHAPTER LIST FUNCTIONS
   // ========================
   const handleOpenChapterList = async () => {
     console.log('chapter',chapterListState.chapters);
@@ -322,7 +335,7 @@ console.log('reading---1')
   }, [chapterListState.isOpen]);
 
   // ========================
-  // 4.1. TEXT-TO-SPEECH FUNCTIONS
+  // 6. TEXT-TO-SPEECH FUNCTIONS
   // ========================
   
   // Initialize TTS when component mounts
@@ -590,8 +603,45 @@ console.log('reading---1')
     };
   }, []);
 
+  // Format content based on type
+  const formatContent = (content: string) => {
+    // Get the selected chip type from localStorage
+    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+    
+    // If type is manga, process content as images separated by #
+    if (selectedType === 'manga') {
+      const imageUrls = content.split('#').filter(url => url.trim().length > 0);
+      return imageUrls.map(url => `<img src="${url.trim()}" alt="Manga page" class="w-full h-auto mb-4" />`).join('\n');
+    }
+    
+    // Default behavior for novel and other types (text content)
+    return content
+      .split('\r\n\r\n')
+      .map(paragraph => paragraph.trim())
+      .filter(paragraph => paragraph.length > 0)
+      .map(paragraph => `<p>${paragraph.replace(/\r\n/g, '<br>')}</p>`)
+      .join('\n');
+  };
+  
+  const subContent = (content: string) => {
+    // Split content into sentences for TTS
+    // For novels: split by paragraph breaks
+    // For manga: return empty array as we don't read images
+    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+    
+    if (selectedType === 'manga') {
+      return []; // No TTS for manga content
+    }
+    
+    // For novel content, split by paragraph breaks and filter empty paragraphs
+    return content
+      .split('\r\n\r\n')
+      .map(paragraph => paragraph.trim())
+      .filter(paragraph => paragraph.length > 0);
+  };
+
   // ========================
-  // 5. LOADING STATE
+  // 7. LOADING STATE
   // ========================
   if (isConfigLoading || !domainConfig) {
     return (
@@ -639,10 +689,10 @@ console.log('reading---1')
                 {state.error || 'Chương không tồn tại hoặc đã bị xóa'}
               </p>
               <Link 
-                href={`/${params.idDoc}`}
+                href={`/`}
                 className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
               >
-                Về trang truyện
+                Về trang chủ
               </Link>
             </div>
           </main>
@@ -653,39 +703,11 @@ console.log('reading---1')
   }
 
   const { detail_documents, infoDoc } = state.storyDetail;
-  
-  // Format content based on type
-  const formatContent = (content: string) => {
-    // Get the selected chip type from localStorage
-    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
-    
-    // If type is manga, process content as images separated by #
-    if (selectedType === 'manga') {
-      const imageUrls = content.split('#').filter(url => url.trim().length > 0);
-      return imageUrls.map(url => `<img src="${url.trim()}" alt="Manga page" class="w-full h-auto mb-0" />`).join('');
-    }
-    
-    // Default behavior for novel and other types (text content)
-    return content
-      .split('\r\n\r\n')
-      .map(paragraph => paragraph.trim())
-      .filter(paragraph => paragraph.length > 0)
-      .map(paragraph => `<p>${paragraph.replace(/\r\n/g, '<br>')}</p>`)
-      .join('\n');
-  };
-  const subContent = (content: string) => {
-    //console.log(content);
-    return content
-      .split(/\n/)
-      .map(paragraph => paragraph.trim())
-      .filter(paragraph => paragraph.length > 0)
-      ;
-  };
-  
   const formattedContent = formatContent(detail_documents.source);
+console.log('formattedContent', infoDoc);
 
   // ========================
-  // 5. RENDER CHAPTER CONTENT
+  // 8. RENDER CHAPTER CONTENT
   // ========================
   return (
     <>

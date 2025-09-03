@@ -4,8 +4,8 @@ export function FooterNav() {
   const navigationItems = [
     { label: "Trang chủ", href: "/", emoji: "🏠" },
     { label: "Lịch sử", href: "/reading-history", emoji: "📚" },
-    { label: "Danh mục", href: "/chuyen-muc", emoji: "🗂️" },
-    { label: "Tài khoản", href: "/tai-khoan", emoji: "👤" },
+    { label: "Danh mục", href: "/danh-muc", emoji: "🗂️" },
+    { label: "Tìm kiếm", href: "/search", emoji: "🔍" },
   ];
 
   return (

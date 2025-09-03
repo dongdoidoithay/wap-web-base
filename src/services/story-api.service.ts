@@ -656,6 +656,96 @@ export async function fetchSearchStories(
 }
 
 /**
+ * Fetch all genres - calls external API directly with retry mechanism
+ */
+export async function fetchAllGenres() {
+  // Update API config with current path
+  apiConfig = getApiConfig();
+  
+  const startTime = Date.now();
+  
+  try {
+    const externalApiUrl = `${apiConfig.baseUrl}/AllGenres`;
+    console.log(`[StoryApiService] 🚀 Starting all genres request`);
+    console.log(`[StoryApiService] 🌐 Request URL: ${externalApiUrl}`);
+    
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (compatible; StoryReader/1.0)'
+      },
+      cache: 'no-store' as RequestCache
+    };
+    
+    // Use retry mechanism with built-in timeout handling (1 retry for faster response)
+    const response = await apiFetch(externalApiUrl, fetchOptions, 1, 1000, apiConfig.timeout);
+    
+    // Check if response is ok
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const rawData = await response.json();
+    const responseTime = Date.now() - startTime;
+    console.log(`[StoryApiService] ✅ All genres API completed successfully in ${responseTime}ms`);
+    console.log('[StoryApiService] Raw API response:', rawData);
+    console.log('[StoryApiService] Response type:', typeof rawData);
+    console.log('[StoryApiService] Is array:', Array.isArray(rawData));
+    console.log('[StoryApiService] Has data property:', rawData && typeof rawData === 'object' && 'data' in rawData);
+    console.log('[StoryApiService] Data property type:', rawData && typeof rawData === 'object' && rawData.data ? typeof rawData.data : 'N/A');
+    console.log('[StoryApiService] Data length:', rawData && typeof rawData === 'object' && rawData.data && Array.isArray(rawData.data) ? rawData.data.length : 'N/A');
+    
+    // Transform genres data - handle both array and object with data property
+    const genres = Array.isArray(rawData) 
+      ? rawData.map((item: any) => ({
+          id: item.id ,
+          name: item.name 
+        }))
+      : rawData && typeof rawData === 'object' && rawData.data && Array.isArray(rawData.data)
+      ? rawData.data.map((item: any) => ({
+          id: item.id ,
+          name: item.name 
+        }))
+      : [];
+    
+    console.log('[StoryApiService] Transformed genres:', genres);
+    
+    return {
+      data: genres,
+      success: true,
+      message: 'Genres fetched successfully',
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Enhanced logging with structured error information
+    console.error(`[StoryApiService] ❌ All genres failed after ${responseTime}ms:`, {
+      error: errorMessage,
+      requestUrl: `${apiConfig.baseUrl}/AllGenres`,
+      apiConfig: {
+        baseUrl: apiConfig.baseUrl,
+        timeout: apiConfig.timeout
+      }
+    });
+    
+    return {
+      data: [],
+      success: false,
+      message: errorMessage,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+  }
+}
+
+/**
  * Update API configuration with new API path
  */
 export function updateApiConfigWithActivePath(apiPath: string): void {

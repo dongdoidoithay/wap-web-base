@@ -387,7 +387,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
   // ========================
   // 8. RENDER
   // ========================
-  
+  console.log('✅ All data loaded successfully render');
   return (
     <>
       {/* SEO HEAD */}

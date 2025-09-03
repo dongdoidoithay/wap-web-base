@@ -347,6 +347,8 @@ export interface ReadingHistoryItem {
   chapterDate?: string;
   storyUrl: string;
   chapterUrl: string;
+  type?: string; // Add type field for filtering by content type
+  apiPath?: string; // Add apiPath field for filtering by API path
 }
 
 export interface ReadingHistoryState {
@@ -362,4 +364,6 @@ export interface ReadingHistoryManager {
   clearHistory: () => void;
   getStoryHistory: (idDoc: string) => ReadingHistoryItem | null;
   getRecentStories: (limit?: number) => ReadingHistoryItem[];
+  getHistoryByType: (type: string) => ReadingHistoryItem[]; // Add method to filter by type
+  getHistoryByApiPath: (apiPath: string) => ReadingHistoryItem[]; // Add method to filter by API path
 }

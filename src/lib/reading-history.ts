@@ -18,8 +18,9 @@ const MAX_HISTORY_ITEMS = 50; // Limit to prevent localStorage from growing too 
 class ReadingHistoryManagerClass implements ReadingHistoryManager {
   /**
    * Get all reading history items from localStorage
+   * By default, filters by current API path from localStorage
    */
-  getHistory(): ReadingHistoryItem[] {
+  getHistory(filterByCurrentApiPath: boolean = true): ReadingHistoryItem[] {
     try {
       if (typeof window === 'undefined') return [];
       
@@ -29,9 +30,19 @@ class ReadingHistoryManagerClass implements ReadingHistoryManager {
       const items: ReadingHistoryItem[] = JSON.parse(historyData);
       
       // Sort by lastReadAt (newest first) and ensure data integrity
-      return items
+      let filteredItems = items
         .filter(item => item.idDoc && item.idDetail && item.storyName)
         .sort((a, b) => new Date(b.lastReadAt).getTime() - new Date(a.lastReadAt).getTime());
+      
+      // By default, filter by current API path from localStorage
+      if (filterByCurrentApiPath) {
+        const currentApiPath = typeof window !== 'undefined' ? localStorage.getItem('selectedApiPath') : null;
+        if (currentApiPath) {
+          filteredItems = filteredItems.filter(item => item.apiPath === currentApiPath);
+        }
+      }
+      
+      return filteredItems;
     } catch (error) {
       console.error('Error reading history from localStorage:', error);
       return [];
@@ -45,7 +56,7 @@ class ReadingHistoryManagerClass implements ReadingHistoryManager {
     try {
       if (typeof window === 'undefined') return;
 
-      const currentHistory = this.getHistory();
+      const currentHistory = this.getHistory(false); // Get all history items
       
       // Find existing item for the same story
       const existingIndex = currentHistory.findIndex(item => item.idDoc === newItem.idDoc);
@@ -83,7 +94,7 @@ class ReadingHistoryManagerClass implements ReadingHistoryManager {
     try {
       if (typeof window === 'undefined') return;
 
-      const currentHistory = this.getHistory();
+      const currentHistory = this.getHistory(false); // Get all history items
       const filteredHistory = currentHistory.filter(item => item.idDoc !== idDoc);
       
       localStorage.setItem(READING_HISTORY_KEY, JSON.stringify(filteredHistory));
@@ -114,7 +125,7 @@ class ReadingHistoryManagerClass implements ReadingHistoryManager {
    */
   getStoryHistory(idDoc: string): ReadingHistoryItem | null {
     try {
-      const history = this.getHistory();
+      const history = this.getHistory(); // Use default filtering by API path
       return history.find(item => item.idDoc === idDoc) || null;
     } catch (error) {
       console.error('Error getting story history:', error);
@@ -127,7 +138,7 @@ class ReadingHistoryManagerClass implements ReadingHistoryManager {
    */
   getRecentStories(limit: number = 3): ReadingHistoryItem[] {
     try {
-      const history = this.getHistory();
+      const history = this.getHistory(); // Use default filtering by API path
       return history.slice(0, limit);
     } catch (error) {
       console.error('Error getting recent stories:', error);
@@ -140,10 +151,36 @@ class ReadingHistoryManagerClass implements ReadingHistoryManager {
    */
   getHistoryCount(): number {
     try {
-      return this.getHistory().length;
+      return this.getHistory().length; // Use default filtering by API path
     } catch (error) {
       console.error('Error getting history count:', error);
       return 0;
+    }
+  }
+
+  /**
+   * Get reading history filtered by type
+   */
+  getHistoryByType(type: string): ReadingHistoryItem[] {
+    try {
+      const history = this.getHistory(); // Use default filtering by API path
+      return history.filter(item => item.type === type);
+    } catch (error) {
+      console.error('Error getting history by type:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get reading history filtered by API path
+   */
+  getHistoryByApiPath(apiPath: string): ReadingHistoryItem[] {
+    try {
+      const history = this.getHistory(false); // Get all history items
+      return history.filter(item => item.apiPath === apiPath);
+    } catch (error) {
+      console.error('Error getting history by API path:', error);
+      return [];
     }
   }
 
@@ -219,7 +256,9 @@ export function createReadingHistoryItem({
   storyImage = '',
   storyAuthor = '',
   storyGenres = '',
-  chapterDate = ''
+  chapterDate = '',
+  type = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') || undefined : undefined,
+  apiPath = typeof window !== 'undefined' ? localStorage.getItem('selectedApiPath') || undefined : undefined
 }: {
   idDoc: string;
   idDetail: string;
@@ -231,6 +270,8 @@ export function createReadingHistoryItem({
   storyAuthor?: string;
   storyGenres?: string;
   chapterDate?: string;
+  type?: string; // Add type parameter
+  apiPath?: string; // Add apiPath parameter
 }): ReadingHistoryItem {
   return {
     idDoc,
@@ -245,7 +286,9 @@ export function createReadingHistoryItem({
     storyGenres,
     chapterDate,
     storyUrl: `/${idDoc}`,
-    chapterUrl: `/${idDoc}/${idDetail}`
+    chapterUrl: `/${idDoc}/${idDetail}`,
+    type, // Include type in the returned object
+    apiPath // Include apiPath in the returned object
   };
 }
 
@@ -292,6 +335,14 @@ export function useReadingHistory() {
     return readingHistoryManager.getStoryHistory(idDoc);
   }, []);
 
+  const getHistoryByType = React.useCallback((type: string) => {
+    return readingHistoryManager.getHistoryByType(type);
+  }, []);
+
+  const getHistoryByApiPath = React.useCallback((apiPath: string) => {
+    return readingHistoryManager.getHistoryByApiPath(apiPath);
+  }, []);
+
   const getHistoryCount = React.useCallback(() => {
     return readingHistoryManager.getHistoryCount();
   }, []);
@@ -305,6 +356,8 @@ export function useReadingHistory() {
     refreshHistory,
     getRecentStories,
     getStoryHistory,
+    getHistoryByType,
+    getHistoryByApiPath,
     getHistoryCount
   };
 }
