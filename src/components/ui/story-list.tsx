@@ -1,6 +1,8 @@
 'use client';
 
 import { StoryCard } from './story-card';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 interface StoryItem {
   idDoc?: string;
@@ -30,13 +32,17 @@ interface StoryListProps {
 }
 
 export function StoryList({ stories, showImages, loading = false }: StoryListProps) {
+  const { currentLang } = useLanguage();
+
   if (loading) {
     return null; // Loading handled by parent component
   }
 
   if (stories.length === 0) {
     return (
-      <p className="text-muted text-center py-8">Không có dữ liệu</p>
+      <p className="text-muted text-center py-8">
+        {TextConstants.story.no_data[currentLang]}
+      </p>
     );
   }
 

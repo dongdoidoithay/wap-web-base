@@ -1,4 +1,6 @@
 import React from 'react';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 // Enhanced loading skeleton with better animations
 export function LoadingSkeleton({ lines = 3, className = '' }: { lines?: number; className?: string }) {
@@ -16,11 +18,13 @@ export function LoadingSkeleton({ lines = 3, className = '' }: { lines?: number;
 
 // Page loading state
 export function PageLoadingState() {
+  const { currentLang } = useLanguage();
+  
   return (
     <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
       <div className="text-center space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <div className="text-muted">Đang tải dữ liệu...</div>
+        <div className="text-muted">{TextConstants.common.loading_data[currentLang]}</div>
       </div>
     </div>
   );
@@ -28,8 +32,8 @@ export function PageLoadingState() {
 
 // Error state component
 export function ErrorState({ 
-  title = 'Đã xảy ra lỗi', 
-  message = 'Không thể tải dữ liệu. Vui lòng thử lại sau.',
+  title,
+  message,
   onRetry,
   showRetry = true 
 }: {
@@ -38,18 +42,24 @@ export function ErrorState({
   onRetry?: () => void;
   showRetry?: boolean;
 }) {
+  const { currentLang } = useLanguage();
+  
+  // Use default values from constants if not provided
+  const errorTitle = title || TextConstants.common.error_occurred[currentLang];
+  const errorMessage = message || TextConstants.common.no_content[currentLang];
+
   return (
     <div className="text-center py-8 px-4">
       <div className="max-w-md mx-auto">
         <div className="text-4xl mb-4">😵</div>
-        <h3 className="text-lg font-semibold text-error mb-2">{title}</h3>
-        <p className="text-muted mb-4">{message}</p>
+        <h3 className="text-lg font-semibold text-error mb-2">{errorTitle}</h3>
+        <p className="text-muted mb-4">{errorMessage}</p>
         {showRetry && onRetry && (
           <button 
             onClick={onRetry}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
           >
-            🔄 Thử lại
+            🔄 {TextConstants.common.try_again[currentLang]}
           </button>
         )}
       </div>
@@ -59,20 +69,26 @@ export function ErrorState({
 
 // Empty state component
 export function EmptyState({ 
-  title = 'Không có dữ liệu',
-  message = 'Chưa có nội dung để hiển thị.',
+  title,
+  message,
   icon = '📭'
 }: {
   title?: string;
   message?: string;
   icon?: string;
 }) {
+  const { currentLang } = useLanguage();
+  
+  // Use default values from constants if not provided
+  const emptyTitle = title || TextConstants.common.no_data[currentLang];
+  const emptyMessage = message || TextConstants.common.no_content[currentLang];
+
   return (
     <div className="text-center py-8 px-4">
       <div className="max-w-md mx-auto">
         <div className="text-4xl mb-4">{icon}</div>
-        <h3 className="text-lg font-semibold text-muted mb-2">{title}</h3>
-        <p className="text-body-secondary">{message}</p>
+        <h3 className="text-lg font-semibold text-muted mb-2">{emptyTitle}</h3>
+        <p className="text-body-secondary">{emptyMessage}</p>
       </div>
     </div>
   );

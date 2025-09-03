@@ -7,6 +7,8 @@ import { useDomain } from '@/hooks/use-domain';
 import { PageLoadingState, ErrorState } from '@/components/ui/loading-states';
 import { Header, FooterNav, StorySection } from '@/components/ui';
 import { fetchAllGenres } from '@/services/story-api.service';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 // Genre interface
 interface Genre {
@@ -24,6 +26,8 @@ interface Genre {
  * 5. Loading and error states
  */
 export default function CategoryPage() {
+  const { currentLang } = useLanguage();
+  
   // ========================
   // 1. DOMAIN CONFIGURATION
   // ========================
@@ -111,18 +115,18 @@ export default function CategoryPage() {
   const seoData = React.useMemo(() => {
     if (!domainConfig) {
       return {
-        title: 'Thể Loại Truyện...',
-        description: 'Đang tải...',
+        title: `${TextConstants.category.title[currentLang]}...`,
+        description: TextConstants.common.loading[currentLang],
         canonical: ''
       };
     }
     
-    const title = `Thể Loại Truyện - ${domainConfig.name}`;
-    const description = `Khám phá tất cả thể loại truyện trên ${domainConfig.name}. Tìm truyện theo sở thích của bạn.`;
+    const title = `${TextConstants.category.title[currentLang]} - ${domainConfig.name}`;
+    const description = TextConstants.category.description[currentLang].replace('{domainName}', domainConfig.name);
     const canonical = `https://${domainConfig.domain}/danh-muc`;
     
     return { title, description, canonical };
-  }, [domainConfig]);
+  }, [domainConfig, currentLang]);
 
   // ========================
   // 7. LOADING STATE
@@ -132,7 +136,7 @@ export default function CategoryPage() {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -161,18 +165,18 @@ export default function CategoryPage() {
             <div className="mx-auto max-w-screen-sm px-3 pt-6 pb-4">
               <div className="text-center">
                 <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
-                  📚 Thể Loại Truyện
+                  {TextConstants.category.title[currentLang]}
                 </h1>
                 <p className="text-muted">
                   {genres.length > 0 ? (
-                    <>Khám phá <strong>{genres.length}</strong> thể loại truyện{responseTime && <span className="text-xs"> ({responseTime}ms)</span>}
+                    <>{TextConstants.common.view_all[currentLang]} <strong>{genres.length}</strong> {TextConstants.common.categories[currentLang]}{responseTime && <span className="text-xs"> ({responseTime}ms)</span>}
                   </>
                   ) : loading ? (
-                    'Đang tải danh sách thể loại...'
+                    TextConstants.category.loading[currentLang]
                   ) : error ? (
-                    `Lỗi: ${error}`
+                    `${TextConstants.common.error_occurred[currentLang]}: ${error}`
                   ) : (
-                    'Không tìm thấy thể loại truyện'
+                    TextConstants.category.no_categories[currentLang]
                   )}
                 </p>
               </div>
@@ -181,16 +185,16 @@ export default function CategoryPage() {
             {/* BREADCRUMB */}
             <nav className="mx-auto max-w-screen-sm px-3 py-3 space-x-2 text-sm text-muted">
               <Link href="/" className="hover:text-primary transition-colors">
-                Trang chủ
+                {TextConstants.common.home[currentLang]}
               </Link>
               <span>›</span>
-              <span className="text-body-primary font-medium">Thể loại truyện</span>
+              <span className="text-body-primary font-medium">{TextConstants.category.breadcrumb[currentLang]}</span>
             </nav>
 
             {/* GENRES CONTENT */}
             <div className="px-3">
               <StorySection
-                title="📚 Tất cả thể loại truyện"
+                title={TextConstants.category.all_categories[currentLang]}
                 error={error || undefined}
                 actions={
                   <button
@@ -198,7 +202,7 @@ export default function CategoryPage() {
                     disabled={loading}
                     className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    🔄 Làm mới
+                    {TextConstants.category.refresh[currentLang]}
                   </button>
                 }
               >
@@ -216,7 +220,7 @@ export default function CategoryPage() {
                   </div>
                 ) : error ? (
                   <ErrorState 
-                    title="Lỗi tải thể loại"
+                    title={TextConstants.category.error_loading[currentLang]}
                     message={error}
                     onRetry={handleRefresh}
                   />
@@ -240,17 +244,17 @@ export default function CategoryPage() {
                   <div className="text-center py-12">
                     <div className="text-6xl mb-4">😔</div>
                     <h3 className="text-lg font-medium text-body-primary mb-2">
-                      Không tìm thấy thể loại nào
+                      {TextConstants.category.no_categories[currentLang]}
                     </h3>
                     <p className="text-muted mb-6">
-                      {error ? `Lỗi: ${error}` : 'Danh sách thể loại truyện đang trống'}
+                      {error ? `${TextConstants.common.error_occurred[currentLang]}: ${error}` : TextConstants.category.empty_list[currentLang]}
                     </p>
                     
                     <button
                       onClick={handleRefresh}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
                     >
-                      🔄 Thử lại
+                      {TextConstants.category.try_again[currentLang]}
                     </button>
                   </div>
                 )}
@@ -268,7 +272,7 @@ export default function CategoryPage() {
         <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">Đang tải thể loại...</span>
+            <span className="text-sm">{TextConstants.category.loading[currentLang]}</span>
           </div>
         </div>
       )}

@@ -1,5 +1,8 @@
 'use client';
 
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
+
 interface PerformanceIndicatorsProps {
   lastResponseTime: number;
   cacheStatus: string;
@@ -9,6 +12,8 @@ export function PerformanceIndicators({
   lastResponseTime,
   cacheStatus
 }: PerformanceIndicatorsProps) {
+  const { currentLang } = useLanguage();
+  
   return (
     <div className="flex items-center gap-2">
       {/* Performance indicator */}
@@ -28,10 +33,10 @@ export function PerformanceIndicators({
           cacheStatus === 'SERVER-SIDE' ? 'bg-success/20 text-success' :
           'bg-surface border border-light text-muted'
         }`}>
-          {cacheStatus === 'HIT' ? '📦 Cache' : 
-           cacheStatus === 'MISS' ? '🌐 Fresh' : 
-           cacheStatus === 'SERVER-SIDE' ? '⚡ Server' : 
-           '❓ Unknown'}
+          {cacheStatus === 'HIT' ? TextConstants.performanceIndicators.cache_hit[currentLang] : 
+           cacheStatus === 'MISS' ? TextConstants.performanceIndicators.fresh_data[currentLang] : 
+           cacheStatus === 'SERVER-SIDE' ? TextConstants.performanceIndicators.server_side[currentLang] : 
+           TextConstants.performanceIndicators.unknown[currentLang]}
         </span>
       )}
     </div>

@@ -6,8 +6,11 @@ import { useParams } from 'next/navigation';
 import { useDomain } from '@/hooks/use-domain';
 import { SEOHead } from '@/components/seo-head';
 import { Header, FooterNav } from '@/components/ui';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 export default function ChapterNotFound() {
+  const { currentLang } = useLanguage();
   const params = useParams();
   const domainConfig = useDomain();
 
@@ -15,7 +18,7 @@ export default function ChapterNotFound() {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -26,8 +29,8 @@ export default function ChapterNotFound() {
   return (
     <>
       <SEOHead 
-        title={`Không tìm thấy chương | ${domainConfig.name}`}
-        description="Chương bạn đang tìm kiếm không tồn tại hoặc đã bị xóa"
+        title={`${TextConstants.chapterDetail.not_found_title[currentLang]} | ${domainConfig.name}`}
+        description={TextConstants.chapterDetail.not_found_message[currentLang]}
         noindex={true}
       />
       
@@ -43,13 +46,12 @@ export default function ChapterNotFound() {
               
               {/* Error Title */}
               <h1 className="text-4xl font-bold text-primary mb-4">
-                Không tìm thấy chương
+                {TextConstants.chapterDetail.not_found_title[currentLang]}
               </h1>
               
               {/* Error Message */}
               <p className="text-lg text-muted mb-8 leading-relaxed">
-                Rất tiếc, chương bạn đang tìm kiếm không tồn tại hoặc đã bị xóa. 
-                Có thể chương này chưa được cập nhật hoặc đường dẫn đã thay đổi.
+                {TextConstants.chapterDetail.not_found_message[currentLang]}
               </p>
               
               {/* Action Buttons */}
@@ -58,7 +60,7 @@ export default function ChapterNotFound() {
                   href="/"
                   className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                 >
-                  🏠 Về trang chủ
+                  🏠 {TextConstants.chapterDetail.home_button[currentLang]}
                 </Link>
                 
                 {idDoc && (
@@ -66,7 +68,7 @@ export default function ChapterNotFound() {
                     href={`/${idDoc}`}
                     className="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/90 transition-colors"
                   >
-                    📚 Về trang truyện
+                    📚 {TextConstants.chapterDetail.story_page_button[currentLang]}
                   </Link>
                 )}
                 
@@ -74,18 +76,18 @@ export default function ChapterNotFound() {
                   onClick={() => window.history.back()}
                   className="inline-flex items-center px-6 py-3 bg-muted text-muted-foreground rounded-lg font-medium hover:bg-muted/90 transition-colors"
                 >
-                  ↩️ Quay lại
+                  ↩️ {TextConstants.chapterDetail.back_button[currentLang]}
                 </button>
               </div>
               
               {/* Suggestions */}
               <div className="mt-12 p-6 bg-card rounded-lg border">
-                <h2 className="text-xl font-bold text-primary mb-4">Gợi ý cho bạn</h2>
+                <h2 className="text-xl font-bold text-primary mb-4">{TextConstants.chapterDetail.suggestions_title[currentLang]}</h2>
                 <div className="text-left space-y-2 text-sm text-muted">
-                  <p>• Kiểm tra lại số chương trong URL</p>
-                  <p>• Quay lại trang thông tin truyện để xem danh sách chương</p>
-                  <p>• Chương có thể chưa được cập nhật</p>
-                  <p>• Thử làm mới trang hoặc quay lại sau</p>
+                  <p>• {TextConstants.chapterDetail.suggestion_check_chapter[currentLang]}</p>
+                  <p>• {TextConstants.chapterDetail.suggestion_return_to_story[currentLang]}</p>
+                  <p>• {TextConstants.chapterDetail.suggestion_chapter_not_updated[currentLang]}</p>
+                  <p>• {TextConstants.chapterDetail.suggestion_refresh_page[currentLang]}</p>
                 </div>
               </div>
               

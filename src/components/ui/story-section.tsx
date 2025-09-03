@@ -1,6 +1,8 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 interface StorySectionProps {
   title: string;
@@ -17,6 +19,8 @@ export function StorySection({
   error,
   className = "mx-auto max-w-screen-sm px-3 py-3"
 }: StorySectionProps) {
+  const { currentLang } = useLanguage();
+
   return (
     <section className={className}>
       <div className="flex items-center justify-between mb-4">
@@ -30,7 +34,9 @@ export function StorySection({
       
       {error && (
         <div className="mb-4 p-3 rounded-md bg-error/10 text-error border border-error/20">
-          <p className="text-sm">Lỗi: {error}</p>
+          <p className="text-sm">
+            {TextConstants.common.error_occurred[currentLang]}: {error}
+          </p>
         </div>
       )}
       

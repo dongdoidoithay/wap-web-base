@@ -7,6 +7,8 @@ import { useDomain } from '@/hooks/use-domain';
 import { Header, FooterNav } from '@/components/ui';
 import { useReadingHistory } from '@/lib/reading-history';
 import { ReadingHistoryItem } from '@/types';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 interface ReadingHistoryPageState {
   searchQuery: string;
@@ -20,6 +22,7 @@ export default function ReadingHistoryPage() {
   // ========================
   // 1. HOOKS AND STATE
   // ========================
+  const { currentLang } = useLanguage();
   const domainConfig = useDomain();
   const { 
     history, 
@@ -140,7 +143,7 @@ export default function ReadingHistoryPage() {
   };
 
   const clearAllHistory = () => {
-    if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch sử đọc? Hành động này không thể hoàn tác.')) {
+    if (window.confirm(TextConstants.readingHistory.confirm_clear[currentLang])) {
       clearHistory();
       setPageState(prev => ({
         ...prev,
@@ -157,7 +160,7 @@ export default function ReadingHistoryPage() {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -169,8 +172,8 @@ export default function ReadingHistoryPage() {
   return (
     <>
       <SEOHead
-        title={`Lịch Sử Đọc | ${domainConfig.name}`}
-        description="Quản lý lịch sử đọc truyện của bạn. Xem các truyện đã đọc gần đây và tiếp tục từ chương đã dừng lại."
+        title={`${TextConstants.readingHistory.title[currentLang]} | ${domainConfig.name}`}
+        description={TextConstants.readingHistory.description[currentLang]}
         canonical={`https://${domainConfig.domain}/reading-history`}
       />
 
@@ -182,22 +185,22 @@ export default function ReadingHistoryPage() {
           {/* BREADCRUMB */}
           <nav className="flex items-center space-x-2 text-sm text-muted mb-6">
             <Link href="/" className="hover:text-primary transition-colors">
-              Trang chủ
+              {TextConstants.common.home[currentLang]}
             </Link>
             <span>›</span>
-            <span className="text-body-primary font-medium">Lịch sử đọc</span>
+            <span className="text-body-primary font-medium">{TextConstants.common.history[currentLang]}</span>
           </nav>
 
           {/* PAGE HEADER */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
-                📚 Lịch Sử Đọc
+                {TextConstants.readingHistory.title[currentLang]}
               </h1>
               <p className="text-muted">
                 {history.length === 0
-                  ? 'Chưa có truyện nào trong lịch sử đọc'
-                  : `${history.length} truyện đã đọc`}
+                  ? TextConstants.readingHistory.empty_history[currentLang]
+                  : `${history.length} ${TextConstants.story.chapters[currentLang]}`}
               </p>
             </div>
             
@@ -211,13 +214,13 @@ export default function ReadingHistoryPage() {
                       : 'bg-secondary text-secondary-foreground hover:bg-secondary/90'
                   }`}
                 >
-                  {pageState.bulkDeleteMode ? 'Hủy chọn' : 'Chọn nhiều'}
+                  {pageState.bulkDeleteMode ? TextConstants.readingHistory.cancel[currentLang] : TextConstants.common.view_all[currentLang]}
                 </button>
                 <button
                   onClick={clearAllHistory}
                   className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 >
-                  Xóa tất cả
+                  {TextConstants.readingHistory.clear_history[currentLang]}
                 </button>
               </div>
             )}
@@ -232,7 +235,7 @@ export default function ReadingHistoryPage() {
                   <div className="flex-1">
                     <input
                       type="text"
-                      placeholder="Tìm kiếm theo tên truyện, chương, tác giả..."
+                      placeholder={`${TextConstants.common.search[currentLang]} ${TextConstants.common.search.placeholder[currentLang]}`}
                       value={pageState.searchQuery}
                       onChange={(e) =>
                         setPageState(prev => ({ ...prev, searchQuery: e.target.value }))
@@ -252,9 +255,9 @@ export default function ReadingHistoryPage() {
                     }
                     className="px-4 py-2 border rounded-lg bg-background text-body-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
-                    <option value="recent">Mới nhất</option>
-                    <option value="name">Tên truyện</option>
-                    <option value="progress">Tiến độ</option>
+                    <option value="recent">{TextConstants.home.latest_stories[currentLang]}</option>
+                    <option value="name">{TextConstants.common.search[currentLang]}</option>
+                    <option value="progress">{TextConstants.readingHistory.progress[currentLang]}</option>
                   </select>
                 </div>
 
@@ -266,13 +269,13 @@ export default function ReadingHistoryPage() {
                         onClick={selectAll}
                         className="text-sm text-primary hover:underline"
                       >
-                        Chọn tất cả
+                        {TextConstants.common.view_all[currentLang]}
                       </button>
                       <button
                         onClick={deselectAll}
                         className="text-sm text-muted hover:underline"
                       >
-                        Bỏ chọn
+                        {TextConstants.readingHistory.cancel[currentLang]}
                       </button>
                     </div>
                     
@@ -281,7 +284,7 @@ export default function ReadingHistoryPage() {
                         onClick={bulkDelete}
                         className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                       >
-                        Xóa {pageState.selectedItems.size} mục
+                        {TextConstants.readingHistory.clear_history[currentLang]} {pageState.selectedItems.size} {TextConstants.story.chapters[currentLang]}
                       </button>
                     )}
                   </div>
@@ -293,10 +296,10 @@ export default function ReadingHistoryPage() {
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🔍</div>
                   <h3 className="text-xl font-bold text-primary mb-2">
-                    Không tìm thấy kết quả
+                    {TextConstants.common.search.no_results[currentLang]}
                   </h3>
                   <p className="text-muted">
-                    Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
+                    {TextConstants.common.search.try_different_keywords[currentLang]}
                   </p>
                 </div>
               ) : (
@@ -368,10 +371,10 @@ export default function ReadingHistoryPage() {
                           </p>
                           
                           <div className="text-xs text-muted mb-3 space-y-1">
-                            <div>Chương {story.currentChapterIndex + 1} / {story.totalChapters}</div>
-                            <div>Tiến độ: {progress.toFixed(1)}%</div>
-                            <div>Đọc lần cuối: {new Date(story.lastReadAt).toLocaleDateString('vi-VN')}</div>
-                            {story.storyAuthor && <div>Tác giả: {story.storyAuthor}</div>}
+                            <div>{TextConstants.story.chapters[currentLang]} {story.currentChapterIndex + 1} / {story.totalChapters}</div>
+                            <div>{TextConstants.readingHistory.progress[currentLang]}: {progress.toFixed(1)}%</div>
+                            <div>{TextConstants.readingHistory.last_read[currentLang]}: {new Date(story.lastReadAt).toLocaleDateString('vi-VN')}</div>
+                            {story.storyAuthor && <div>{TextConstants.story.author[currentLang]}: {story.storyAuthor}</div>}
                           </div>
 
                           {/* Action Buttons */}
@@ -380,19 +383,19 @@ export default function ReadingHistoryPage() {
                               href={story.chapterUrl}
                               className="flex-1 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-center"
                             >
-                              Tiếp tục đọc
+                              {TextConstants.readingHistory.continue_reading[currentLang]}
                             </Link>
                             <Link
                               href={story.storyUrl}
                               className="px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
-                              title="Thông tin truyện"
+                              title={TextConstants.readingHistory.story_info[currentLang]}
                             >
                               📖
                             </Link>
                             <button
                               onClick={() => handleDeleteStory(story.idDoc)}
                               className="px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                              title="Xóa khỏi lịch sử"
+                              title={TextConstants.readingHistory.remove_from_history[currentLang]}
                             >
                               🗑️
                             </button>
@@ -411,16 +414,16 @@ export default function ReadingHistoryPage() {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📚</div>
               <h3 className="text-xl font-bold text-primary mb-2">
-                Chưa có lịch sử đọc
+                {TextConstants.readingHistory.empty_history_title[currentLang]}
               </h3>
               <p className="text-muted mb-6">
-                Bắt đầu đọc truyện để xây dựng lịch sử đọc của bạn
+                {TextConstants.readingHistory.empty_history[currentLang]}
               </p>
               <Link
                 href="/"
                 className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
-                Khám phá truyện
+                {TextConstants.readingHistory.explore_stories[currentLang]}
               </Link>
             </div>
           )}
@@ -435,23 +438,23 @@ export default function ReadingHistoryPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-background border rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-primary mb-4">
-              Xác nhận xóa
+              {TextConstants.readingHistory.confirm[currentLang]}
             </h3>
             <p className="text-muted mb-6">
-              Bạn có chắc muốn xóa truyện này khỏi lịch sử đọc? Hành động này không thể hoàn tác.
+              {TextConstants.readingHistory.remove_confirm[currentLang]}
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={cancelDelete}
                 className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
               >
-                Hủy
+                {TextConstants.readingHistory.cancel[currentLang]}
               </button>
               <button
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
-                Xóa
+                {TextConstants.readingHistory.confirm[currentLang]}
               </button>
             </div>
           </div>

@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { setCurrentApiPath } from '@/services/story-api.service';
+import { useLanguage } from '@/contexts/language-context';
 
 interface CategoryChip {
   id: string;
@@ -12,6 +12,7 @@ interface CategoryChip {
   "api-path": string;
   "active-default"?: boolean;
   type?: string;
+  lang?: string; // Language property - if not set, chip will show for all languages
 }
 
 interface CategoryChipsProps {
@@ -19,15 +20,17 @@ interface CategoryChipsProps {
 }
 
 export function CategoryChips({ cateChips }: CategoryChipsProps) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [activeChipId, setActiveChipId] = useState<string | null>(null);
+  const { currentLang, changeLanguage } = useLanguage();
+
+  // Show all cateChips regardless of language
+  const displayedCateChips = cateChips;
 
   // Load active chip from localStorage on component mount
   useEffect(() => {
     const savedApiPath = localStorage.getItem('selectedApiPath');
     if (savedApiPath) {
-      const savedChip = cateChips.find(chip => chip["api-path"] === savedApiPath);
+      const savedChip = displayedCateChips.find(chip => chip["api-path"] === savedApiPath);
       if (savedChip) {
         setActiveChipId(savedChip.id);
         // Save the type to localStorage if it exists
@@ -39,7 +42,7 @@ export function CategoryChips({ cateChips }: CategoryChipsProps) {
       }
     } else {
       // If no saved API path, use the default active chip
-      const defaultChip = cateChips.find(chip => chip["active-default"]);
+      const defaultChip = displayedCateChips.find(chip => chip["active-default"]);
       if (defaultChip) {
         setActiveChipId(defaultChip.id);
         localStorage.setItem('selectedApiPath', defaultChip["api-path"]);
@@ -51,7 +54,7 @@ export function CategoryChips({ cateChips }: CategoryChipsProps) {
         setCurrentApiPath(defaultChip["api-path"]);
       }
     }
-  }, [cateChips]);
+  }, [displayedCateChips]);
 
   const handleCategoryClick = useCallback((chip: CategoryChip) => {
     // Save the selected API path to localStorage
@@ -65,6 +68,12 @@ export function CategoryChips({ cateChips }: CategoryChipsProps) {
       localStorage.removeItem('selectedChipType');
     }
     
+    // Save the language to localStorage if it exists
+    if (chip.lang) {
+      localStorage.setItem('language', chip.lang);
+      changeLanguage(chip.lang as 'vi' | 'en');
+    }
+    
     // Set the active chip
     setActiveChipId(chip.id);
     
@@ -73,16 +82,16 @@ export function CategoryChips({ cateChips }: CategoryChipsProps) {
     
     // Refresh the page to apply the new API path
     window.location.reload();
-  }, []);
+  }, [changeLanguage]);
 
-  if (!cateChips || cateChips.length === 0) {
+  if (!displayedCateChips || displayedCateChips.length === 0) {
     return null;
   }
 
   return (
     <div className="mx-auto max-w-screen-sm px-3 py-2 overflow-x-auto">
       <ul className="flex gap-2 whitespace-nowrap">
-        {cateChips.map((chip) => (
+        {displayedCateChips.map((chip) => (
           <li key={chip.id}>
             <button
               onClick={() => handleCategoryClick(chip)}

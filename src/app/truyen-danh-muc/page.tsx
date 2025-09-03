@@ -23,6 +23,10 @@ import { fetchStoriesByMode } from '@/services/story-api.service';
 // Types
 import type { StoryItem } from '@/types';
 
+// Contexts
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
+
 // Genre Stories data structure
 interface GenreStoriesData {
   stories: StoryItem[];
@@ -47,7 +51,12 @@ interface GenreStoriesData {
  */
 export default function MangaCatePage() {
   // ========================
-  // 1. DOMAIN CONFIGURATION
+  // 1. HOOKS
+  // ========================
+  const { currentLang } = useLanguage();
+  
+  // ========================
+  // 2. DOMAIN CONFIGURATION
   // ========================
   const domainConfig = useDomain();
   const isConfigLoading = !domainConfig;
@@ -204,18 +213,18 @@ export default function MangaCatePage() {
   const seoData = React.useMemo(() => {
     if (!domainConfig || !genreData.genreName) {
       return {
-        title: 'Truyện Theo Thể Loại...',
-        description: 'Đang tải...',
+        title: `${TextConstants.category.title[currentLang]}...`,
+        description: TextConstants.common.loading_data[currentLang],
         canonical: ''
       };
     }
     
-    const title = `Truyện Thể Loại ${genreData.genreName} - ${domainConfig.name}`;
-    const description = `Khám phá ${genreData.total > 0 ? genreData.total : ''} truyện thể loại ${genreData.genreName} trên ${domainConfig.name}. Đọc ngay những truyện mới nhất.`;
+    const title = `${TextConstants.category.genre_stories_title[currentLang].replace('{genreName}', genreData.genreName)} - ${domainConfig.name}`;
+    const description = TextConstants.category.genre_stories_description[currentLang].replace('{count}', genreData.total > 0 ? genreData.total.toString() : '').replace('{genreName}', genreData.genreName).replace('{domainName}', domainConfig.name);
     const canonical = `https://${domainConfig.domain}/truyen-danh-muc?id=${genreId}`;
     
     return { title, description, canonical };
-  }, [domainConfig, genreData.genreName, genreData.total, genreId]);
+  }, [domainConfig, genreData.genreName, genreData.total, genreId, currentLang]);
 
   // ========================
   // 8. LOADING STATE
@@ -225,7 +234,7 @@ export default function MangaCatePage() {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -255,7 +264,7 @@ export default function MangaCatePage() {
               <div className="mx-auto max-w-screen-sm px-3 pt-6 pb-4">
                 <div className="text-center">
                   <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
-                    📚 Truyện Theo Thể Loại
+                    📚 {TextConstants.category.title[currentLang]}
                   </h1>
                   {genreData.genreName && (
                     <h2 className="text-xl md:text-2xl font-semibold text-primary mb-2">
@@ -264,11 +273,11 @@ export default function MangaCatePage() {
                   )}
                   <p className="text-muted">
                     {genreData.total > 0 ? (
-                      <>Khám phá <strong>{genreData.total}</strong> truyện{genreData.responseTime && <span className="text-xs"> ({genreData.responseTime}ms)</span>}</>
+                      <>{TextConstants.category.stories_count[currentLang].replace('{count}', genreData.total.toString())}{genreData.responseTime && <span className="text-xs"> ({genreData.responseTime}ms)</span>}</>
                     ) : genreData.loading ? (
-                      'Đang tải danh sách truyện...'
+                      TextConstants.category.loading[currentLang]
                     ) : (
-                      'Danh sách truyện theo thể loại'
+                      TextConstants.category.description[currentLang]
                     )}
                   </p>
                 </div>
@@ -277,10 +286,10 @@ export default function MangaCatePage() {
               {/* BREADCRUMB */}
               <nav className="mx-auto max-w-screen-sm px-3 py-3 space-x-2 text-sm text-muted">
                 <Link href="/" className="hover:text-primary transition-colors">
-                  Trang chủ
+                  {TextConstants.common.home[currentLang]}
                 </Link>
                 <span>›</span>
-                <span className="text-body-primary font-medium">Truyện theo thể loại</span>
+                <span className="text-body-primary font-medium">{TextConstants.category.breadcrumb[currentLang]}</span>
                 {genreData.genreName && (
                   <>
                     <span>›</span>
@@ -296,29 +305,29 @@ export default function MangaCatePage() {
                   <div className="mb-4 text-center">
                     {genreData.loading ? (
                       <p className="text-muted">
-                        🔄 Đang tải truyện theo thể loại...
+                        🔄 {TextConstants.category.loading_stories[currentLang]}
                       </p>
                     ) : genreData.error ? (
                       <p className="text-red-500">
-                        ❌ Lỗi tải dữ liệu: {genreData.error}
+                        ❌ {TextConstants.common.error_occurred[currentLang]}: {genreData.error}
                       </p>
                     ) : genreData.stories.length > 0 ? (
                       <p className="text-muted">
-                        ✅ Hiển thị <strong>{genreData.stories.length}</strong> truyện (trang {genreData.currentPage + 1} / {genreData.totalPages})
+                        ✅ {TextConstants.category.displaying_stories[currentLang].replace('{count}', genreData.stories.length.toString()).replace('{currentPage}', (genreData.currentPage + 1).toString()).replace('{totalPages}', genreData.totalPages.toString())}
                         {genreData.responseTime && (
                           <span className="text-xs"> ({genreData.responseTime}ms)</span>
                         )}
                       </p>
                     ) : (
                       <p className="text-muted">
-                        📚 Không có truyện nào trong thể loại này
+                        📚 {TextConstants.category.no_stories_in_genre[currentLang]}
                       </p>
                     )}
                   </div>
 
                   {/* Stories Section */}
                   <StorySection
-                    title={`📚 Danh sách truyện thể loại ${genreData.genreName || ''}`}
+                    title={`📚 ${TextConstants.category.story_list_title[currentLang]} ${genreData.genreName || ''}`}
                     error={genreData.error}
                     actions={
                       genreData.stories.length > 0 ? (
@@ -327,7 +336,7 @@ export default function MangaCatePage() {
                           disabled={genreData.loading}
                           className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          🔄 Làm mới
+                          🔄 {TextConstants.category.refresh[currentLang]}
                         </button>
                       ) : null
                     }
@@ -359,17 +368,17 @@ export default function MangaCatePage() {
                       <div className="text-center py-12">
                         <div className="text-6xl mb-4">😔</div>
                         <h3 className="text-lg font-medium text-body-primary mb-2">
-                          Không tìm thấy truyện trong thể loại này
+                          {TextConstants.category.no_stories_found_title[currentLang]}
                         </h3>
                         <p className="text-muted mb-6">
-                          Hãy kiểm tra lại thông tin thể loại hoặc thử tìm kiếm với từ khóa khác
+                          {TextConstants.category.no_stories_found_description[currentLang]}
                         </p>
                         <div className="space-y-2 text-sm text-muted">
-                          <p>💡 <strong>Gợi ý:</strong></p>
+                          <p>💡 <strong>{TextConstants.common.search.suggestions_title[currentLang]}:</strong></p>
                           <ul className="list-disc list-inside space-y-1 text-left max-w-md mx-auto">
-                            <li>Thử làm mới trang để tải lại dữ liệu</li>
-                            <li>Kiểm tra kết nối mạng của bạn</li>
-                            <li>Sử dụng chức năng tìm kiếm để tìm thể loại</li>
+                            <li>{TextConstants.category.suggestion_refresh_page[currentLang]}</li>
+                            <li>{TextConstants.category.suggestion_check_connection[currentLang]}</li>
+                            <li>{TextConstants.category.suggestion_use_search[currentLang]}</li>
                           </ul>
                         </div>
                         
@@ -378,7 +387,7 @@ export default function MangaCatePage() {
                             href="/" 
                             className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
                           >
-                            🏠 Về trang chủ
+                            🏠 {TextConstants.common.home[currentLang]}
                           </Link>
                         </div>
                       </div>
@@ -398,7 +407,7 @@ export default function MangaCatePage() {
         <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">Đang tải truyện...</span>
+            <span className="text-sm">{TextConstants.category.loading_indicator[currentLang]}</span>
           </div>
         </div>
       )}

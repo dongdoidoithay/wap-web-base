@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { getDomainConfigSync } from '@/lib/domain-config';
 import { getCachedStoryDetail } from '@/lib/cached-story-detail';
 import { fetchStoryDetail } from '@/services/story-detail.service';
+import { TextConstants } from '@/lib/text-constants';
 
 interface ChapterReadingLayoutProps {
   params: Promise<{
@@ -33,15 +34,17 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
         const title = `${detail_documents.nameChapter} - ${infoDoc.name} | ${config.name}`;
 
 
-        const description = `Đọc ${detail_documents.nameChapter} của truyện ${infoDoc.name} tại ${config.name}. Nội dung chất lượng cao, cập nhật mới nhất.`;
+        const description = TextConstants.storyDetail.seo_description.vi
+          .replace('{chapterName}', detail_documents.nameChapter)
+          .replace('{storyName}', infoDoc.name)
+          .replace('{domainName}', config.name);
         const keywords = [
           infoDoc.name,
           detail_documents.nameChapter,
           infoDoc.authName,
           infoDoc.genresName,
-          'đọc truyện',
-          'chương',
-          'truyện online',
+          TextConstants.storyDetail.seo_keyword_story.vi,
+          TextConstants.storyDetail.seo_keyword_chapter.vi,
           config.name
         ].filter(Boolean);
 
@@ -53,12 +56,12 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
           publisher: config.name,
           metadataBase: new URL(`https://${config.domain}`),
           alternates: {
-            canonical: `/${resolvedParams.idDoc}/${resolvedParams.idDetail}`,
+            canonical: `/${resolvedParams.idDoc}`,
           },
           openGraph: {
             title,
             description,
-            url: `https://${config.domain}/${resolvedParams.idDoc}/${resolvedParams.idDetail}`,
+            url: `https://${config.domain}/${resolvedParams.idDoc}`,
             siteName: config.name,
             images: [
               {
@@ -70,7 +73,7 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
             ],
             locale: 'vi_VN',
             type: 'article',
-            section: 'Truyện',
+            section: TextConstants.storyDetail.seo_section.vi,
           },
           twitter: {
             card: 'summary_large_image',
@@ -91,7 +94,7 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
             },
           },
           other: {
-            'article:section': 'Truyện',
+            'article:section': TextConstants.storyDetail.seo_section.vi,
             'article:tag': detail_documents.nameChapter,
             'article:author': infoDoc.authName,
             'article:published_time': detail_documents.date,
@@ -103,17 +106,19 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
     // Fallback to original logic if API fails
 
     
-    const storyName = `Truyện ${resolvedParams.idDoc}`;
-    const chapterName = `Chương ${resolvedParams.idDetail}`;
+    const storyName = `${TextConstants.storyDetail.story_label.vi} ${resolvedParams.idDoc}`;
+    const chapterName = `${TextConstants.storyDetail.chapter_label.vi} ${resolvedParams.idDetail}`;
 
     const title = `${chapterName} - ${storyName} | ${config.name}`;
-    const description = `Đọc ${chapterName} của truyện ${storyName} tại ${config.name}. Nội dung chất lượng cao, cập nhật mới nhất.`;
+    const description = TextConstants.storyDetail.seo_description.vi
+      .replace('{chapterName}', chapterName)
+      .replace('{storyName}', storyName)
+      .replace('{domainName}', config.name);
     const keywords = [
       storyName,
       chapterName,
-      'đọc truyện',
-      'chương',
-      'truyện online',
+      TextConstants.storyDetail.seo_keyword_story.vi,
+      TextConstants.storyDetail.seo_keyword_chapter.vi,
       config.name
     ];
 
@@ -125,12 +130,12 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
       publisher: config.name,
       metadataBase: new URL(`https://${config.domain}`),
       alternates: {
-        canonical: `/${resolvedParams.idDoc}/${resolvedParams.idDetail}`,
+        canonical: `/${resolvedParams.idDoc}`,
       },
       openGraph: {
         title,
         description,
-        url: `https://${config.domain}/${resolvedParams.idDoc}/${resolvedParams.idDetail}`,
+        url: `https://${config.domain}/${resolvedParams.idDoc}`,
         siteName: config.name,
         images: [
           {
@@ -142,7 +147,7 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
         ],
         locale: 'vi_VN',
         type: 'article',
-        section: 'Truyện',
+        section: TextConstants.storyDetail.seo_section.vi,
       },
       twitter: {
         card: 'summary_large_image',
@@ -163,7 +168,7 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
         },
       },
       other: {
-        'article:section': 'Truyện',
+        'article:section': TextConstants.storyDetail.seo_section.vi,
         'article:tag': chapterName,
       },
     };
@@ -172,8 +177,8 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
     
     // Fallback metadata
     return {
-      title: `Đọc truyện | ${config.name}`,
-      description: `Đọc truyện online tại ${config.name}`,
+      title: `${TextConstants.storyDetail.read_story.vi} | ${config.name}`,
+      description: `${TextConstants.storyDetail.read_story_online.vi} ${config.name}`,
       robots: {
         index: false,
         follow: true,

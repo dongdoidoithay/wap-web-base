@@ -5,15 +5,18 @@ import Link from 'next/link';
 import { useDomain } from '@/hooks/use-domain';
 import { SEOHead } from '@/components/seo-head';
 import { Header, FooterNav } from '@/components/ui';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 export default function StoryNotFound() {
+  const { currentLang } = useLanguage();
   const domainConfig = useDomain();
 
   if (!domainConfig) {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -22,8 +25,8 @@ export default function StoryNotFound() {
   return (
     <>
       <SEOHead 
-        title={`Không tìm thấy truyện | ${domainConfig.name}`}
-        description="Truyện bạn đang tìm kiếm không tồn tại hoặc đã bị xóa"
+        title={`${TextConstants.storyDetail.not_found_title[currentLang]} | ${domainConfig.name}`}
+        description={TextConstants.storyDetail.not_found_message[currentLang]}
         noindex={true}
       />
       
@@ -39,13 +42,12 @@ export default function StoryNotFound() {
               
               {/* Error Title */}
               <h1 className="text-4xl font-bold text-primary mb-4">
-                Không tìm thấy truyện
+                {TextConstants.storyDetail.not_found_title[currentLang]}
               </h1>
               
               {/* Error Message */}
               <p className="text-lg text-muted mb-8 leading-relaxed">
-                Rất tiếc, truyện bạn đang tìm kiếm không tồn tại hoặc đã bị xóa. 
-                Có thể đường dẫn đã thay đổi hoặc truyện đã được gỡ bỏ khỏi hệ thống.
+                {TextConstants.storyDetail.not_found_message[currentLang]}
               </p>
               
               {/* Action Buttons */}
@@ -54,25 +56,25 @@ export default function StoryNotFound() {
                   href="/"
                   className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                 >
-                  🏠 Về trang chủ
+                  🏠 {TextConstants.storyDetail.home_button[currentLang]}
                 </Link>
                 
                 <button 
                   onClick={() => window.history.back()}
                   className="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/90 transition-colors"
                 >
-                  ↩️ Quay lại
+                  ↩️ {TextConstants.storyDetail.back_button[currentLang]}
                 </button>
               </div>
               
               {/* Suggestions */}
               <div className="mt-12 p-6 bg-card rounded-lg border">
-                <h2 className="text-xl font-bold text-primary mb-4">Gợi ý cho bạn</h2>
+                <h2 className="text-xl font-bold text-primary mb-4">{TextConstants.storyDetail.suggestions_title[currentLang]}</h2>
                 <div className="text-left space-y-2 text-sm text-muted">
-                  <p>• Kiểm tra lại đường dẫn URL</p>
-                  <p>• Tìm kiếm truyện bằng tên hoặc tác giả</p>
-                  <p>• Duyệt qua danh sách truyện mới cập nhật</p>
-                  <p>• Liên hệ với chúng tôi nếu bạn cho rằng đây là lỗi</p>
+                  <p>• {TextConstants.storyDetail.suggestion_check_url[currentLang]}</p>
+                  <p>• {TextConstants.storyDetail.suggestion_search_story[currentLang]}</p>
+                  <p>• {TextConstants.storyDetail.suggestion_browse_updates[currentLang]}</p>
+                  <p>• {TextConstants.storyDetail.suggestion_contact_us[currentLang]}</p>
                 </div>
               </div>
               

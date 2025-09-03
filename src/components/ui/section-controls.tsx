@@ -1,6 +1,8 @@
 'use client';
 
 import { PerformanceIndicators } from './performance-indicators';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 interface SectionControlsProps {
   showImages: boolean;
@@ -19,6 +21,8 @@ export function SectionControls({
   lastResponseTime,
   cacheStatus
 }: SectionControlsProps) {
+  const { currentLang } = useLanguage();
+  
   return (
     <>
       <PerformanceIndicators
@@ -32,9 +36,9 @@ export function SectionControls({
             ? 'bg-info text-white hover:bg-info/90'
             : 'bg-surface border border-light text-body-secondary hover:bg-primary/10'
         }`}
-        title={showImages ? 'Ẩn ảnh' : 'Hiện ảnh'}
+        title={showImages ? TextConstants.sectionControls.hide_images[currentLang] : TextConstants.sectionControls.show_images[currentLang]}
       >
-        {showImages ? '🖼️ Ẩn ảnh' : '📝 Hiện ảnh'}
+        {showImages ? TextConstants.sectionControls.hide_images_button[currentLang] : TextConstants.sectionControls.show_images_button[currentLang]}
       </button>
       <button
         onClick={onRefresh}
@@ -44,9 +48,9 @@ export function SectionControls({
             ? 'bg-surface border border-light text-muted cursor-not-allowed'
             : 'bg-primary text-white hover:bg-primary/90'
         }`}
-        title="Làm mới dữ liệu"
+        title={TextConstants.sectionControls.refresh_title[currentLang]}
       >
-        {loading ? '🔄 Đang tải...' : '🔄 Làm mới'}
+        {loading ? TextConstants.sectionControls.refresh_loading[currentLang] : TextConstants.sectionControls.refresh_button[currentLang]}
       </button>
     </>
   );

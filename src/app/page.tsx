@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { StoryListSkeleton } from '@/components/loading-skeleton';
 import { SEOHead } from '@/components/seo-head';
 import { ApiErrorBoundary } from '@/components/api-error-boundary';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 // UI Components
 import { 
@@ -74,6 +76,8 @@ interface ProgressiveHomeData {
  * 4. SEO optimization with structured data
  */
 export default function HomePage({ searchParams }: HomePageProps) {
+  const { currentLang } = useLanguage();
+  
   // ========================
   // 1. DOMAIN CONFIGURATION
   // ========================
@@ -193,7 +197,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
           newState.latestStories = {
             ...prev.latestStories,
             loading: false,
-            error: `Lỗi tải truyện mới: ${latestResult.reason?.message || 'Unknown error'}`
+            error: `${TextConstants.common.error_occurred[currentLang]} tải truyện mới: ${latestResult.reason?.message || 'Unknown error'}`
           };
         }
         
@@ -209,7 +213,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
           newState.topFollowStories = {
             ...prev.topFollowStories,
             loading: false,
-            error: `Lỗi tải top follow: ${topFollowResult.reason?.message || 'Unknown error'}`
+            error: `${TextConstants.common.error_occurred[currentLang]} tải top follow: ${topFollowResult.reason?.message || 'Unknown error'}`
           };
         }
         
@@ -225,7 +229,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
           newState.topDayStories = {
             ...prev.topDayStories,
             loading: false,
-            error: `Lỗi tải top ngày: ${topDayResult.reason?.message || 'Unknown error'}`
+            error: `${TextConstants.common.error_occurred[currentLang]} tải top ngày: ${topDayResult.reason?.message || 'Unknown error'}`
           };
         }
         
@@ -239,12 +243,12 @@ export default function HomePage({ searchParams }: HomePageProps) {
       // Set all to error state
       setProgressiveData(prev => ({
         ...prev,
-        latestStories: { ...prev.latestStories, loading: false, error: 'Lỗi kết nối mạng' },
-        topFollowStories: { ...prev.topFollowStories, loading: false, error: 'Lỗi kết nối mạng' },
-        topDayStories: { ...prev.topDayStories, loading: false, error: 'Lỗi kết nối mạng' }
+        latestStories: { ...prev.latestStories, loading: false, error: `${TextConstants.common.error_occurred[currentLang]} kết nối mạng` },
+        topFollowStories: { ...prev.topFollowStories, loading: false, error: `${TextConstants.common.error_occurred[currentLang]} kết nối mạng` },
+        topDayStories: { ...prev.topDayStories, loading: false, error: `${TextConstants.common.error_occurred[currentLang]} kết nối mạng` }
       }));
     }
-  }, []); // Empty dependency array since function doesn't depend on any state or props
+  }, [currentLang]); // Add currentLang as dependency
   
   // Page change handler - direct implementation
   const handlePageChange = useCallback((newPage: number) => {
@@ -309,8 +313,8 @@ export default function HomePage({ searchParams }: HomePageProps) {
       return {
         siteLd: {},
         breadcrumbLd: {},
-        title: 'Loading...',
-        description: 'Loading content...',
+        title: TextConstants.common.loading[currentLang] + '...',
+        description: TextConstants.common.loading_data[currentLang] + '...',
         canonical: ''
       };
     }
@@ -320,11 +324,11 @@ export default function HomePage({ searchParams }: HomePageProps) {
     return {
       siteLd,
       breadcrumbLd,
-      title: domainConfig.seo?.title || domainConfig.name || 'Home',
+      title: domainConfig.seo?.title || domainConfig.name || TextConstants.common.home[currentLang],
       description: domainConfig.seo?.description || domainConfig.description || '',
       canonical: `https://${domainConfig.domain}`
     };
-  }, [domainConfig]);
+  }, [domainConfig, currentLang]);
 
   // ========================
   // 6. EFFECTS
@@ -378,7 +382,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -424,13 +428,13 @@ export default function HomePage({ searchParams }: HomePageProps) {
           {/* RECENT READING HISTORY - Shows only if user has reading history */}
           {recentReadStories.length > 0 && (
             <StorySection
-              title="📚 Đọc Gần Đây"
+              title={TextConstants.home.recently_read[currentLang]}
               actions={
                 <Link 
                   href="/reading-history" 
                   className="text-sm text-muted hover:text-primary transition-colors"
                 >
-                  Xem tất cả →
+                  {TextConstants.common.view_all[currentLang]} →
                 </Link>
               }
             >
@@ -458,7 +462,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
                         {story.chapterName}
                       </p>
                       <div className="flex items-center justify-between text-xs text-muted">
-                        <span>Chương {story.currentChapterIndex + 1}/{story.totalChapters}</span>
+                        <span>{TextConstants.common.chapter[currentLang]} {story.currentChapterIndex + 1}/{story.totalChapters}</span>
                         <span>{new Date(story.lastReadAt).toLocaleDateString('vi-VN')}</span>
                       </div>
                     </div>
@@ -474,14 +478,14 @@ export default function HomePage({ searchParams }: HomePageProps) {
               
               {/* LATEST STORIES SECTION - Renders immediately when loaded */}
               <StorySection
-                  title="🔥 Truyện Mới Cập Nhật"
+                  title={TextConstants.home.latest_stories[currentLang]}
                   error={progressiveData.latestStories.error}
                   actions={
                    <Link 
                       href="/truyen-moi-cap-nhat?page=1" 
                       className="text-sm text-muted hover:text-primary transition-colors"
                     >
-                      Xem thêm →
+                      {TextConstants.common.view_all[currentLang]} →
                     </Link>
                   }
               >
@@ -508,7 +512,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
 
                 {!progressiveData.latestStories.loading && progressiveData.latestStories.data.length === 0 && !progressiveData.latestStories.error && (
                   <div className="text-center py-8 text-muted">
-                    <p>Không có truyện nào được tìm thấy</p>
+                    <p>{TextConstants.home.no_stories_found[currentLang]}</p>
                   </div>
                 )}
               </StorySection>
@@ -516,7 +520,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
               {/* TOP FOLLOW STORIES - Renders when loaded, independent of other sections */}
               {(progressiveData.topFollowStories.data.length > 0 || progressiveData.topFollowStories.loading) && (
                 <StorySection 
-                  title="🏆 Top Truyện Được Theo Dõi Nhiều"
+                  title={TextConstants.home.top_followed[currentLang]}
                   error={progressiveData.topFollowStories.error}
                   
                 >
@@ -539,7 +543,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
               {/* TOP DAY STORIES - Renders when loaded, independent of other sections */}
               {(progressiveData.topDayStories.data.length > 0 || progressiveData.topDayStories.loading) && (
                 <StorySection 
-                  title="🔥 Top Xem Trong Ngày"
+                  title={TextConstants.home.top_day[currentLang]}
                   error={progressiveData.topDayStories.error}
                 >
                   {progressiveData.topDayStories.loading ? (
@@ -562,7 +566,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
                 <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">Đang tải dữ liệu...</span>
+                    <span className="text-sm">{TextConstants.home.loading_data[currentLang]}</span>
                   </div>
                 </div>
               )}
@@ -571,7 +575,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
               {allCompleted && !hasAnyError && (
                 <div className="fixed bottom-4 right-4 bg-success text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in-out">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">✅ Tải hoàn tất!</span>
+                    <span className="text-sm">{TextConstants.home.load_complete[currentLang]}</span>
                   </div>
                 </div>
               )}

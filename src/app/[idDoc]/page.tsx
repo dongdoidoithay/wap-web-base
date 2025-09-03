@@ -11,6 +11,8 @@ import { Header, FooterNav } from '@/components/ui';
 import { fetchStoryDetail, fetchStoryListChapter } from '@/services/story-detail.service';
 import { getCachedStoryDetail } from '@/lib/cached-story-detail';
 import { readingHistoryManager, createReadingHistoryItem } from '@/lib/reading-history';
+import { TextConstants } from '@/lib/text-constants';
+import { useLanguage } from '@/contexts/language-context';
 
 interface StoryReadingPageProps {
   params: Promise<{
@@ -117,6 +119,7 @@ interface StoryDetailData {
 }
 
 export default function StoryReadingPage({ params: paramsPromise }: StoryReadingPageProps) {
+  const { currentLang } = useLanguage();
   // Unwrap params Promise using React.use() as required in Next.js 15+
   const params = React.use(paramsPromise);
   const router = useRouter();
@@ -397,11 +400,11 @@ console.log('reading---1')
         setChapterListState(prev => ({
           ...prev,
           loading: false,
-          error: result.message || 'Không thể tải danh sách chương'
+          error: result.message || TextConstants.readingHistory.error_loading_chapters.vi
         }));
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Lỗi khi tải danh sách chương';
+      const errorMessage = error instanceof Error ? error.message : TextConstants.readingHistory.error_loading_chapters.vi;
       setChapterListState(prev => ({
         ...prev,
         loading: false,
@@ -629,7 +632,7 @@ console.log('reading---1')
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
+          <div className="text-muted">{TextConstants.storyDetail.loading_config[currentLang]}</div>
         </div>
       </div>
     );
@@ -639,8 +642,8 @@ console.log('reading---1')
     return (
       <>
         <SEOHead 
-          title="Đang tải chương..."
-          description="Đang tải nội dung chương"
+          title={TextConstants.storyDetail.loading_chapter[currentLang]}
+          description={TextConstants.storyDetail.loading_content[currentLang]}
         />
         <div className="min-h-dvh bg-background text-body-primary">
           <Header config={domainConfig} />
@@ -657,24 +660,24 @@ console.log('reading---1')
     return (
       <>
         <SEOHead 
-          title="Lỗi tải chương"
-          description="Không thể tải nội dung chương"
+          title={TextConstants.storyDetail.error_loading[currentLang]}
+          description={TextConstants.storyDetail.loading_content[currentLang]}
         />
         <div className="min-h-dvh bg-background text-body-primary">
           <Header config={domainConfig} />
           <main className="container mx-auto px-4 py-6 pb-24">
             <div className="text-center py-12">
               <h1 className="text-2xl font-bold text-primary mb-4">
-                Không tìm thấy chương
+                {TextConstants.storyDetail.not_found_title[currentLang]}
               </h1>
               <p className="text-muted mb-6">
-                {state.error || 'Chương không tồn tại hoặc đã bị xóa'}
+                {state.error || TextConstants.storyDetail.not_found_message[currentLang]}
               </p>
               <Link 
                 href={`/`}
                 className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
               >
-                Về trang chủ
+                {TextConstants.storyDetail.home_button[currentLang]}
               </Link>
             </div>
           </main>
@@ -697,20 +700,20 @@ console.log('formattedContent', infoDoc);
       {/* Enhanced SEO HEAD with AI Bot Support */}
       <SEOHead 
         title={`${detail_documents.nameChapter} - ${infoDoc.name} | ${domainConfig.name}`}
-        description={`Đọc ${detail_documents.nameChapter} của truyện ${infoDoc.name} tại ${domainConfig.name}. Nội dung chất lượng cao, cập nhật mới nhất.`}
-        keywords={[infoDoc.name, detail_documents.nameChapter, 'đọc truyện', 'chương', domainConfig.name]}
-        canonical={`https://${domainConfig.domain}/${params.idDoc}}`}
+        description={`${TextConstants.storyDetail.seo_description[currentLang].replace('{chapterName}', detail_documents.nameChapter).replace('{storyName}', infoDoc.name).replace('{domainName}', domainConfig.name)}`}
+        keywords={[infoDoc.name, detail_documents.nameChapter, TextConstants.storyDetail.seo_keyword_story[currentLang], TextConstants.storyDetail.seo_keyword_chapter[currentLang], domainConfig.name]}
+        canonical={`https://${domainConfig.domain}/${params.idDoc}/${detail_documents.idDetail}`}
         article={{
-          author: infoDoc.authName || 'Admin',
+          author: infoDoc.authName || TextConstants.chapterDetail.seo_default_author[currentLang],
           publishedTime: detail_documents.date,
           modifiedTime: detail_documents.date,
-          section: 'Truyện',
-          tags: [infoDoc.name, detail_documents.nameChapter, 'chapter']
+          section: TextConstants.storyDetail.seo_section[currentLang],
+          tags: [infoDoc.name, detail_documents.nameChapter, TextConstants.storyDetail.seo_keyword_chapter[currentLang]]
         }}
         breadcrumbs={[
-          { name: 'Trang chủ', url: '/' },
+          { name: TextConstants.storyDetail.breadcrumb_home[currentLang], url: '/' },
           { name: infoDoc.name, url: `/${params.idDoc}` },
-          { name: detail_documents.nameChapter, url: `/${params.idDoc}}` }
+          { name: detail_documents.nameChapter, url: `/${params.idDoc}/${detail_documents.idDetail}` }
         ]}
         customSchema={{
           "@context": "https://schema.org",
@@ -722,7 +725,7 @@ console.log('formattedContent', infoDoc);
             "url": `https://${domainConfig.domain}/${params.idDoc}`
           },
           "position": detail_documents.currentChapterIndex + 1,
-          "url": `https://${domainConfig.domain}/${params.idDoc}}`,
+          "url": `https://${domainConfig.domain}/${params.idDoc}/${detail_documents.idDetail}`,
           "datePublished": detail_documents.date,
           "inLanguage": "vi-VN"
         }}
@@ -738,7 +741,7 @@ console.log('formattedContent', infoDoc);
               
               {/* BREADCRUMB */}
               <nav className="flex items-center space-x-2 text-sm text-muted mb-6">
-                <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
+                <Link href="/" className="hover:text-primary transition-colors">{TextConstants.storyDetail.breadcrumb_home[currentLang]}</Link>
                 <span>›</span>
                 <Link href={`/${params.idDoc}`} className="hover:text-primary transition-colors">
                   {infoDoc.name}
@@ -753,14 +756,14 @@ console.log('formattedContent', infoDoc);
                   {detail_documents.nameChapter}
                 </h1>
                 <p className="text-muted">
-                  Truyện: <Link href={`/${params.idDoc}`} className="hover:text-primary transition-colors font-medium">
+                  {TextConstants.storyDetail.story_label[currentLang]}: <Link href={`/${params.idDoc}`} className="hover:text-primary transition-colors font-medium">
                     {infoDoc.name}
                   </Link>
                 </p>
                 <div className="text-sm text-muted mt-2">
-                  Chương {detail_documents.currentChapterIndex + 1} / {detail_documents.totalChapters} •
-                  Tác giả: {infoDoc.authName} •
-                  Lượt xem: {detail_documents.view.toLocaleString()}
+                  {TextConstants.storyDetail.chapter[currentLang]} {detail_documents.currentChapterIndex + 1} / {detail_documents.totalChapters} •
+                  {TextConstants.storyDetail.author[currentLang]}: {infoDoc.authName} •
+                  {TextConstants.storyDetail.views[currentLang]}: {detail_documents.view.toLocaleString()}
                 </div>
               </div>
 
@@ -772,11 +775,11 @@ console.log('formattedContent', infoDoc);
                       href={`/${params.idDoc}/${detail_documents.idDetailPrev}`}
                       className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      ← {detail_documents.nameDetailPrev || 'Chương trước'}
+                      ← {detail_documents.nameDetailPrev || TextConstants.storyDetail.previous_chapter[currentLang]}
                     </Link>
                   ) : (
                     <span className="px-4 py-2 bg-muted/50 text-muted rounded-lg text-sm cursor-not-allowed">
-                      ← Chương trước
+                      ← {TextConstants.storyDetail.previous_chapter[currentLang]}
                     </span>
                   )}
                   
@@ -784,7 +787,7 @@ console.log('formattedContent', infoDoc);
                     onClick={handleOpenChapterList}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
                   >
-                    📚 Danh sách chương
+                    📚 {TextConstants.storyDetail.chapter_list_button[currentLang]}
                   </button>
                   
                   <button
@@ -795,7 +798,7 @@ console.log('formattedContent', infoDoc);
                         : 'bg-secondary text-secondary-foreground hover:bg-secondary/90'
                     }`}
                   >
-                    🔊 Đọc audio
+                    🔊 {TextConstants.tts.read_audio_button[currentLang]}
                   </button>
                 </div>
 
@@ -805,7 +808,7 @@ console.log('formattedContent', infoDoc);
                       href={`/${params.idDoc}/${detail_documents.idDetailNext}`}
                       className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      {detail_documents.nameDetailNext || 'Chương sau'} →
+                      {detail_documents.nameDetailNext || TextConstants.storyDetail.next_chapter[currentLang]} →
                     </Link>
                   )}
                 </div>
@@ -816,10 +819,10 @@ console.log('formattedContent', infoDoc);
                 <div className="bg-card rounded-lg p-6 shadow-sm border mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2">
-                      🔊 Điều khiển Audio
+                      🔊 {TextConstants.tts.control_panel_title[currentLang]}
                     </h3>
                     <div className="flex items-center gap-2 text-sm text-muted">
-                      <span>Câu {ttsState.currentSentence + 1}/{ttsState.sentences.length}</span>
+                      <span>{TextConstants.tts.sentence_label[currentLang]} {ttsState.currentSentence + 1}/{ttsState.sentences.length}</span>
                     </div>
                   </div>
                   
@@ -827,26 +830,26 @@ console.log('formattedContent', infoDoc);
                   {ttsState.sentences.length > 0 && (ttsState.isPlaying || ttsState.isPaused) && (
                      <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-blue-800">📖 Đang đọc:</span>
+                        <span className="text-sm font-medium text-blue-800">📖 {TextConstants.tts.reading_label[currentLang]}</span>
                         <div className="flex items-center gap-1 text-xs text-blue-600">
                           <span className="bg-blue-100 px-2 py-1 rounded-full">
-                            Câu {ttsState.currentSentence + 1}/{ttsState.sentences.length}
+                            {TextConstants.tts.sentence_counter[currentLang].replace('{current}', String(ttsState.currentSentence + 1)).replace('{total}', String(ttsState.sentences.length))}
                           </span>
                           {ttsState.isPlaying && (
                             <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full animate-pulse">
-                              🔊 Đang phát
+                              🔊 {TextConstants.tts.playing_status[currentLang]}
                             </span>
                           )}
                           {ttsState.isPaused && (
                             <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
-                              ⏸️ Tạm dừng
+                              ⏸️ {TextConstants.tts.paused_status[currentLang]}
                             </span>
                           )}
                         </div>
                       </div>
                       <div className="text-sm text-gray-700 leading-relaxed p-3 bg-white rounded border border-blue-100 shadow-sm">
                         <span className="font-medium text-blue-900">
-                          {ttsState.sentences[ttsState.currentSentence] || 'mở đầu chương đang đọc'}
+                          {ttsState.sentences[ttsState.currentSentence] || TextConstants.tts.current_text_placeholder[currentLang]}
                         </span>
                       </div>
                     </div>
@@ -855,7 +858,7 @@ console.log('formattedContent', infoDoc);
                   {/* Voice Selection */}
                   <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">Giọng đọc:</label>
+                      <label className="block text-sm font-medium mb-2">{TextConstants.tts.voice_label[currentLang]}</label>
                       <div className="flex gap-2">
                         <select
                           value={ttsState.selectedVoice}
@@ -874,7 +877,7 @@ console.log('formattedContent', infoDoc);
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">Tốc độ: {ttsState.rate}x</label>
+                      <label className="block text-sm font-medium mb-2">{TextConstants.tts.speed_label[currentLang].replace('{speed}', String(ttsState.rate))}</label>
                       <input
                         type="range"
                         min="0.5"
@@ -886,7 +889,7 @@ console.log('formattedContent', infoDoc);
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Âm sắc: {ttsState.pitch}</label>
+                      <label className="block text-sm font-medium mb-2">{TextConstants.tts.pitch_label[currentLang].replace('{pitch}', String(ttsState.pitch))}</label>
                       <input
                         type="range"
                         min="0.5"
@@ -899,7 +902,7 @@ console.log('formattedContent', infoDoc);
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium mb-2">Âm lượng: {Math.round(ttsState.volume * 100)}%</label>
+                      <label className="block text-sm font-medium mb-2">{TextConstants.tts.volume_label[currentLang].replace('{volume}', Math.round(ttsState.volume * 100).toString())}</label>
                       <input
                         type="range"
                         min="0"
@@ -920,7 +923,7 @@ console.log('formattedContent', infoDoc);
                         disabled={ttsState.currentSentence === 0}
                         className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        ⏮️ Trước
+                        ⏮️ {TextConstants.tts.previous_button[currentLang]}
                       </button>
                       
                       {ttsState.isPlaying ? (
@@ -928,7 +931,7 @@ console.log('formattedContent', infoDoc);
                           onClick={ttsControls.pause}
                           className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
                         >
-                          ⏸️ Tạm dừng
+                          ⏸️ {TextConstants.tts.pause_button[currentLang]}
                         </button>
                       ) : (
                         <button
@@ -936,7 +939,7 @@ console.log('formattedContent', infoDoc);
                           disabled={ttsState.sentences.length === 0}
                           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {ttsState.isPaused ? '▶️ Tiếp tục' : '▶️ Phát'}
+                          {ttsState.isPaused ? `▶️ ${TextConstants.tts.continue_button[currentLang]}` : `▶️ ${TextConstants.tts.play_button[currentLang]}`}
                         </button>
                       )}
                       
@@ -944,7 +947,7 @@ console.log('formattedContent', infoDoc);
                         onClick={ttsControls.stop}
                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                       >
-                        ⏹️ Dừng
+                        ⏹️ {TextConstants.tts.stop_button[currentLang]}
                       </button>
                       
                       <button
@@ -952,7 +955,7 @@ console.log('formattedContent', infoDoc);
                         disabled={ttsState.currentSentence >= ttsState.sentences.length - 1}
                         className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Sau ⏭️
+                        {TextConstants.tts.next_button[currentLang]} ⏭️
                       </button>
                     </div>
                     
@@ -964,7 +967,7 @@ console.log('formattedContent', infoDoc);
                           onChange={ttsControls.toggleAutoNext}
                           className="rounded"
                         />
-                        <span className="text-sm">Tự động chuyển chương</span>
+                        <span className="text-sm">{TextConstants.tts.auto_next_label[currentLang]}</span>
                       </label>
                     </div>
                   </div>
@@ -972,7 +975,7 @@ console.log('formattedContent', infoDoc);
                   {/* Progress Bar */}
                   <div className="mt-4">
                     <div className="flex justify-between text-xs text-muted mb-1">
-                      <span>Tiến độ</span>
+                      <span>{TextConstants.tts.progress_label[currentLang]}</span>
                       <span>{Math.round(((ttsState.currentSentence + 1) / ttsState.sentences.length) * 100)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -986,27 +989,27 @@ console.log('formattedContent', infoDoc);
                   {/* Voice Information Panel */}
                   <details className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <summary className="cursor-pointer text-sm font-medium text-blue-800 flex items-center gap-2">
-                      🎤 Thông tin giọng đọc
+                      🎤 {TextConstants.tts.voice_info_title[currentLang]}
                     </summary>
                     <div className="mt-2 text-sm text-blue-700">
                       <div className="mb-2">
-                        <strong>.voiceURI:</strong> {ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice)?.voiceURI || 'Chưa chọn'}
+                        <strong>{TextConstants.tts.voice_uri[currentLang]}</strong> {ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice)?.voiceURI || TextConstants.tts.voice_selected[currentLang]}
                       </div>
                       <div className="mb-2">
-                        <strong>.name:</strong> {ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice)?.name || 'Chưa chọn'}
+                        <strong>{TextConstants.tts.voice_name[currentLang]}</strong> {ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice)?.name || TextConstants.tts.voice_selected[currentLang]}
                       </div>
                       <div className="mb-2">
-                        <strong>.lang:</strong> {ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice)?.lang || 'Chưa chọn'}
+                        <strong>{TextConstants.tts.voice_lang[currentLang]}</strong> {ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice)?.lang || TextConstants.tts.voice_selected[currentLang]}
                       </div>
                       <div className="mb-2">
-                        <strong>.localService:</strong> {ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice)?.localService ? 'Có' : 'Không'}
+                        <strong>{TextConstants.tts.voice_local_service[currentLang]}</strong> {ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice)?.localService ? TextConstants.tts.yes[currentLang] : TextConstants.tts.no[currentLang]}
                       </div>
                       
                       {/* Test Button */}
                       <button
                         onClick={() => {
                           if (speechSynthRef.current && ttsState.selectedVoice) {
-                            const testUtterance = new SpeechSynthesisUtterance('Xin chào, tôi là giọng đọc tiếng Việt');
+                            const testUtterance = new SpeechSynthesisUtterance(TextConstants.tts.test_text[currentLang]);
                             const voice = ttsState.availableVoices.find(v => v.voiceURI === ttsState.selectedVoice);
                             if (voice) testUtterance.voice = voice;
                             speechSynthRef.current.speak(testUtterance);
@@ -1014,32 +1017,32 @@ console.log('formattedContent', infoDoc);
                         }}
                         className="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
                       >
-                        🎤 Test
+                        🎤 {TextConstants.tts.test_button[currentLang]}
                       </button>
                       
                       {/* Vietnamese Voice Installation Guide */}
                       <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
                         <div className="text-xs text-blue-800">
-                          <strong>📥 Cài đặt giọng tiếng Việt trên Windows 10/11:</strong>
+                          <strong>📥 {TextConstants.tts.vietnamese_voice_guide_title[currentLang]}</strong>
                         </div>
                         <div className="text-xs text-blue-700 mt-2 space-y-1">
-                          <div><strong>Bước 1:</strong> Mở <code className="bg-blue-100 px-1 rounded">Settings → Time & Language → Language</code></div>
-                          <div><strong>Bước 2:</strong> Nhấn <code className="bg-blue-100 px-1 rounded">Add a language</code>, tìm "Tiếng Việt"</div>
-                          <div><strong>Bước 3:</strong> Chọn <code className="bg-blue-100 px-1 rounded">Install language pack</code></div>
-                          <div><strong>Bước 4:</strong> Vào <code className="bg-blue-100 px-1 rounded">Settings → Time & Language → Speech → Manage voices</code></div>
-                          <div><strong>Bước 5:</strong> Nhấn <code className="bg-blue-100 px-1 rounded">Add voices</code>, tìm "Vietnamese" hoặc "Tiếng Việt"</div>
-                          <div><strong>Bước 6:</strong> Khởi động lại trình duyệt sau khi cài đặt</div>
+                          <div><strong>{TextConstants.tts.step_1[currentLang]}</strong> {TextConstants.tts.step_1_description[currentLang]}</div>
+                          <div><strong>{TextConstants.tts.step_2[currentLang]}</strong> {TextConstants.tts.step_2_description[currentLang]}</div>
+                          <div><strong>{TextConstants.tts.step_3[currentLang]}</strong> {TextConstants.tts.step_3_description[currentLang]}</div>
+                          <div><strong>{TextConstants.tts.step_4[currentLang]}</strong> {TextConstants.tts.step_4_description[currentLang]}</div>
+                          <div><strong>{TextConstants.tts.step_5[currentLang]}</strong> {TextConstants.tts.step_5_description[currentLang]}</div>
+                          <div><strong>{TextConstants.tts.step_6[currentLang]}</strong> {TextConstants.tts.step_6_description[currentLang]}</div>
                         </div>
                         <div className="text-xs text-blue-600 mt-2 font-medium">
-                          ✅ Sau khi hoàn thành, giọng tiếng Việt sẽ xuất hiện trong danh sách
+                          ✅ {TextConstants.tts.vietnamese_voice_success[currentLang]}
                         </div>
                       </div>
                       
                       <div className="text-xs text-gray-500 mt-2">
-                        💡 <strong>Gợi ý khác:</strong>
-                        <br />• Sử dụng Chrome/Edge để có thêm giọng online
-                        <br />• Giọng English cũng có thể đọc được tiếng Việt
-                        <br />• Khởi động lại trình duyệt sau khi cài giọng mới
+                        💡 <strong>{TextConstants.tts.other_suggestions[currentLang]}</strong>
+                        <br />• {TextConstants.tts.chrome_edge_suggestion[currentLang]}
+                        <br />• {TextConstants.tts.english_voice_suggestion[currentLang]}
+                        <br />• {TextConstants.tts.restart_browser_suggestion[currentLang]}
                       </div>
                     </div>
                   </details>
@@ -1062,11 +1065,11 @@ console.log('formattedContent', infoDoc);
                       href={`/${params.idDoc}/${detail_documents.idDetailPrev}`}
                       className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      ← {detail_documents.nameDetailPrev || 'Chương trước'}
+                      ← {detail_documents.nameDetailPrev || TextConstants.storyDetail.previous_chapter[currentLang]}
                     </Link>
                   ) : (
                     <span className="px-4 py-2 bg-muted/50 text-muted rounded-lg text-sm cursor-not-allowed">
-                      ← Chương trước
+                      ← {TextConstants.storyDetail.previous_chapter[currentLang]}
                     </span>
                   )}
                   
@@ -1074,7 +1077,7 @@ console.log('formattedContent', infoDoc);
                     onClick={handleOpenChapterList}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
                   >
-                    📚 Danh sách chương
+                    📚 {TextConstants.storyDetail.chapter_list_button[currentLang]}
                   </button>
                 </div>
 
@@ -1084,7 +1087,7 @@ console.log('formattedContent', infoDoc);
                       href={`/${params.idDoc}/${detail_documents.idDetailNext}`}
                       className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                     >
-                      {detail_documents.nameDetailNext || 'Chương sau'} →
+                      {detail_documents.nameDetailNext || TextConstants.storyDetail.next_chapter[currentLang]} →
                     </Link>
                   )}
                 </div>
@@ -1092,9 +1095,9 @@ console.log('formattedContent', infoDoc);
 
               {/* STORY INFO BOX */}
               <div className="mt-8 p-4 bg-card rounded-lg border">
-                <h3 className="font-bold text-primary mb-2">Về truyện này</h3>
+                <h3 className="font-bold text-primary mb-2">{TextConstants.storyDetail.about_story[currentLang]}</h3>
                 <p className="text-sm text-muted mb-3">
-                  Bạn đang đọc <strong>{detail_documents.nameChapter}</strong> thuộc truyện <strong>{infoDoc.name}</strong>
+                  {TextConstants.storyDetail.reading_current_chapter[currentLang]} <strong>{detail_documents.nameChapter}</strong> {TextConstants.storyDetail.belonging_to_story[currentLang]} <strong>{infoDoc.name}</strong>
                 </p>
                 
                 {/* Reading Progress from LocalStorage */}
@@ -1103,29 +1106,29 @@ console.log('formattedContent', infoDoc);
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-green-600">📍</span>
                       <span className="font-medium text-green-700">
-                        Chương đang đọc: {currentReadingChapter.chapterName}
+                        {TextConstants.storyDetail.current_reading_label[currentLang]}: {currentReadingChapter.chapterName}
                       </span>
                     </div>
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
                   <div>
-                    <span className="font-medium">Tác giả:</span>
+                    <span className="font-medium">{TextConstants.storyDetail.author_label[currentLang]}:</span>
                     {infoDoc.authName.split(',').map((auth, index) => (
                       <Link key={index} href={`/truyen-tac-gia?name=${encodeURIComponent(auth)}&id=${encodeURIComponent(infoDoc.auth.split(',')[index])}`} className="text-primary hover:underline">{auth}</Link>
                       ))}
                   </div>
                   <div>
-                    <span className="font-medium">Thể loại:</span> 
+                    <span className="font-medium">{TextConstants.storyDetail.genre_label[currentLang]}:</span> 
                     {infoDoc.genresName.split(',').map((genre, index) => (
                       <Link key={index} href={`/truyen-danh-muc?name=${encodeURIComponent(genre)}&id=${encodeURIComponent(infoDoc.genres.split(',')[index])}`} className="text-primary hover:underline">{genre}</Link>
                       ))}
                   </div>
                   <div>
-                    <span className="font-medium">Trạng thái:</span> {infoDoc.statusName}
+                    <span className="font-medium">{TextConstants.storyDetail.status_label[currentLang]}:</span> {infoDoc.statusName}
                   </div>
                   <div>
-                    <span className="font-medium">Lượt xem:</span> {infoDoc.view.toLocaleString()}
+                    <span className="font-medium">{TextConstants.storyDetail.views_label[currentLang]}:</span> {infoDoc.view.toLocaleString()}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -1134,22 +1137,22 @@ console.log('formattedContent', infoDoc);
                     <Link
                       href={`/${params.idDoc}/${currentReadingChapter.idDetail}`}
                       className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
-                      title={`Tiếp tục đọc: ${currentReadingChapter.chapterName}`}
+                      title={`${TextConstants.storyDetail.continue_reading_title[currentLang]}: ${currentReadingChapter.chapterName}`}
                     >
-                      📚 Tiếp tục đọc
+                      📚 {TextConstants.storyDetail.continue_reading[currentLang]}
                     </Link>
                   )}
                 {/*   <Link
                     href={`/${params.idDoc}`}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
                   >
-                    📖 Thông tin truyện
+                    📖 {TextConstants.storyDetail.story_info_button[currentLang]}
                   </Link> */}
                   <Link
                     href="/"
                     className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"
                   >
-                    🏠 Trang chủ
+                    🏠 {TextConstants.storyDetail.home_page[currentLang]}
                   </Link>
                 </div>
               </div>
@@ -1177,7 +1180,7 @@ console.log('formattedContent', infoDoc);
             {/* Popup Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-bold text-primary">
-                Danh sách chương - {state.storyDetail?.infoDoc.name}
+                {TextConstants.chapterList.title[currentLang].replace('{storyName}', state.storyDetail?.infoDoc.name || '')}
               </h2>
               <button
                 onClick={handleCloseChapterList}
@@ -1193,7 +1196,7 @@ console.log('formattedContent', infoDoc);
                 <div className="flex items-center justify-center py-12">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted">Đang tải danh sách chương...</p>
+                    <p className="text-muted">{TextConstants.storyDetail.loading_chapter_list[currentLang]}</p>
                   </div>
                 </div>
               ) : chapterListState.error ? (
@@ -1204,7 +1207,7 @@ console.log('formattedContent', infoDoc);
                       onClick={handleOpenChapterList}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
-                      Thử lại
+                      {TextConstants.chapterList.try_again[currentLang]}
                     </button>
                   </div>
                 </div>
@@ -1226,7 +1229,7 @@ console.log('formattedContent', infoDoc);
                           ? 'font-bold text-blue-600' 
                           : 'font-medium group-hover:text-primary'
                       }`}>
-                        {chapter.nameChapter || `Chương ${index + 1}`}
+                        {chapter.nameChapter || `${TextConstants.storyDetail.chapter[currentLang]} ${index + 1}`}
                       </span>
                       <span className="text-xs text-muted">
                         { new Date(chapter.date).toLocaleDateString("vi-VN")|| ''}
@@ -1236,7 +1239,7 @@ console.log('formattedContent', infoDoc);
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-12">
-                  <p className="text-muted">Không có chương nào</p>
+                  <p className="text-muted">{TextConstants.chapterList.no_chapters[currentLang]}</p>
                 </div>
               )}
             </div>
@@ -1248,7 +1251,7 @@ console.log('formattedContent', infoDoc);
                   onClick={handleCloseChapterList}
                   className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
                 >
-                  Đóng
+                  {TextConstants.chapterList.close_button[currentLang]}
                 </button>
               </div>
             </div>

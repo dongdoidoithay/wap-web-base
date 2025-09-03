@@ -23,6 +23,10 @@ import { fetchSearchStories } from '@/services/story-api.service';
 // Types
 import type { StoryItem } from '@/types';
 
+// Contexts
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
+
 // Search result data structure
 interface SearchData {
   results: StoryItem[];
@@ -47,7 +51,12 @@ interface SearchData {
  */
 export default function SearchPage() {
   // ========================
-  // 1. DOMAIN CONFIGURATION
+  // 1. HOOKS
+  // ========================
+  const { currentLang } = useLanguage();
+  
+  // ========================
+  // 2. DOMAIN CONFIGURATION
   // ========================
   const domainConfig = useDomain();
   const isConfigLoading = !domainConfig;
@@ -225,12 +234,12 @@ export default function SearchPage() {
     
     const hasQuery = query.trim();
     const title = hasQuery 
-      ? `Tìm kiếm "${query}" - ${domainConfig.name}`
-      : `Tìm kiếm truyện - ${domainConfig.name}`;
+      ? `${TextConstants.common.search[currentLang]} "${query}" - ${domainConfig.name}`
+      : `${TextConstants.common.search[currentLang]} - ${domainConfig.name}`;
     
     const description = hasQuery
-      ? `Kết quả tìm kiếm cho "${query}" trên ${domainConfig.name}. Tìm thấy ${searchData.total} truyện.`
-      : `Tìm kiếm truyện trên ${domainConfig.name}. Khám phá hàng ngàn tác phẩm hay.`;
+      ? `${TextConstants.common.search.view_all_results[currentLang].replace('{query}', query)} ${TextConstants.common.search.results_count[currentLang].replace('{count}', searchData.total.toString())}.`
+      : `${TextConstants.common.search.description[currentLang].replace('{domainName}', domainConfig.name)}`;
     
     const canonical = `https://${domainConfig.domain}/search${hasQuery ? `?q=${encodeURIComponent(query)}` : ''}`;
     
@@ -245,7 +254,7 @@ export default function SearchPage() {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -275,13 +284,13 @@ export default function SearchPage() {
             <form onSubmit={handleFormSubmit} className="space-y-4">
               <div>
                 <label htmlFor="search-input" className="block text-sm font-medium text-body-primary mb-2">
-                  🔍 Tìm kiếm truyện
+                  🔍 {TextConstants.common.search[currentLang]}
                 </label>
                 <div className="flex items-center gap-2 rounded-2xl border border-light bg-surface px-3 py-2 shadow-sm">
                   <input
                     id="search-input"
                     type="search"
-                    placeholder="Nhập tên truyện, tác giả..."
+                    placeholder={TextConstants.common.search.placeholder[currentLang]}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     className="w-full bg-transparent outline-none placeholder:text-muted text-sm text-body-primary"
@@ -294,7 +303,7 @@ export default function SearchPage() {
                     disabled={searchData.loading || !searchInput.trim()}
                     className="rounded-xl px-4 py-1.5 text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {searchData.loading ? 'Đang tìm...' : 'Tìm kiếm'}
+                    {searchData.loading ? TextConstants.common.loading[currentLang] : TextConstants.common.search.button[currentLang]}
                   </button>
                 </div>
               </div>
@@ -309,24 +318,24 @@ export default function SearchPage() {
                 <div className="mb-4 text-center">
                   {searchData.loading ? (
                     <p className="text-muted">
-                      🔄 Đang tìm kiếm "{searchData.keyword}"...
+                      🔄 {TextConstants.common.search.loading_search[currentLang].replace('{keyword}', searchData.keyword)}
                     </p>
                   ) : searchData.error ? (
                     <p className="text-red-500">
-                      ❌ Lỗi tìm kiếm: {searchData.error}
+                      ❌ {TextConstants.common.search.search_error[currentLang]}: {searchData.error}
                     </p>
                   ) : (
                     <p className="text-muted">
                       {searchData.total > 0 ? (
                         <>
-                          ✅ Tìm thấy <strong>{searchData.total}</strong> kết quả cho "<strong>{searchData.keyword}</strong>"
+                          ✅ {TextConstants.common.search.results_found[currentLang].replace('{count}', searchData.total.toString()).replace('{keyword}', searchData.keyword)}
                           {searchData.responseTime && (
                             <span className="text-xs"> ({searchData.responseTime}ms)</span>
                           )}
                         </>
                       ) : (
                         <>
-                          😔 Không tìm thấy kết quả cho "<strong>{searchData.keyword}</strong>"
+                          😔 {TextConstants.common.search.no_results[currentLang].replace('{keyword}', searchData.keyword)}
                         </>
                       )}
                     </p>
@@ -339,8 +348,8 @@ export default function SearchPage() {
                 <StorySection
                   title={
                     searchData.keyword 
-                      ? `📚 Kết quả tìm kiếm: "${searchData.keyword}"` 
-                      : "📚 Kết quả tìm kiếm"
+                      ? `📚 ${TextConstants.common.search.results_title[currentLang]}: "${searchData.keyword}"` 
+                      : `📚 ${TextConstants.common.search.results_title[currentLang]}`
                   }
                   error={searchData.error}
                 >
@@ -371,18 +380,18 @@ export default function SearchPage() {
                     <div className="text-center py-12">
                       <div className="text-6xl mb-4">😔</div>
                       <h3 className="text-lg font-medium text-body-primary mb-2">
-                        Không tìm thấy kết quả
+                        {TextConstants.common.search.no_results_simple[currentLang]}
                       </h3>
                       <p className="text-muted mb-6">
-                        Thử tìm kiếm với từ khóa khác hoặc kiểm tra lại chính tả
+                        {TextConstants.common.search.try_different_keywords[currentLang]}
                       </p>
                       <div className="space-y-2 text-sm text-muted">
-                        <p>💡 <strong>Gợi ý:</strong></p>
+                        <p>💡 <strong>{TextConstants.common.search.suggestions_title[currentLang]}:</strong></p>
                         <ul className="list-disc list-inside space-y-1 text-left max-w-md mx-auto">
-                          <li>Sử dụng từ khóa ngắn gọn hơn</li>
-                          <li>Thử tìm kiếm theo tên tác giả</li>
-                          <li>Kiểm tra lại chính tả</li>
-                          <li>Sử dụng từ đồng nghĩa</li>
+                          <li>{TextConstants.common.search.suggestion_shorter_keywords[currentLang]}</li>
+                          <li>{TextConstants.common.search.suggestion_search_by_author[currentLang]}</li>
+                          <li>{TextConstants.common.search.suggestion_check_spelling[currentLang]}</li>
+                          <li>{TextConstants.common.search.suggestion_use_synonyms[currentLang]}</li>
                         </ul>
                       </div>
                       
@@ -404,27 +413,27 @@ export default function SearchPage() {
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🔍</div>
                   <h2 className="text-xl font-semibold text-body-primary mb-4">
-                    Tìm kiếm truyện yêu thích
+                    {TextConstants.common.search.welcome_title[currentLang]}
                   </h2>
                   <p className="text-muted mb-8 max-w-md mx-auto">
-                    Nhập tên truyện, tác giả hoặc từ khóa để tìm kiếm trong kho tàng truyện của chúng tôi
+                    {TextConstants.common.search.welcome_description[currentLang]}
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto text-sm">
                     <div className="p-4 bg-surface rounded-lg border">
                       <div className="text-2xl mb-2">📖</div>
-                      <h3 className="font-medium mb-1">Tìm theo tên</h3>
-                      <p className="text-muted">Nhập tên truyện bạn muốn đọc</p>
+                      <h3 className="font-medium mb-1">{TextConstants.common.search.method_name[currentLang]}</h3>
+                      <p className="text-muted">{TextConstants.common.search.method_name_desc[currentLang]}</p>
                     </div>
                     <div className="p-4 bg-surface rounded-lg border">
                       <div className="text-2xl mb-2">✍️</div>
-                      <h3 className="font-medium mb-1">Tìm theo tác giả</h3>
-                      <p className="text-muted">Khám phá tác phẩm của tác giả yêu thích</p>
+                      <h3 className="font-medium mb-1">{TextConstants.common.search.method_author[currentLang]}</h3>
+                      <p className="text-muted">{TextConstants.common.search.method_author_desc[currentLang]}</p>
                     </div>
                     <div className="p-4 bg-surface rounded-lg border">
                       <div className="text-2xl mb-2">🏷️</div>
-                      <h3 className="font-medium mb-1">Tìm theo từ khóa</h3>
-                      <p className="text-muted">Sử dụng từ khóa mô tả nội dung</p>
+                      <h3 className="font-medium mb-1">{TextConstants.common.search.method_keyword[currentLang]}</h3>
+                      <p className="text-muted">{TextConstants.common.search.method_keyword_desc[currentLang]}</p>
                     </div>
                   </div>
 
@@ -433,7 +442,7 @@ export default function SearchPage() {
                       href="/" 
                       className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
                     >
-                      📚 Khám phá truyện hot
+                      📚 {TextConstants.common.search.explore_stories[currentLang]}
                     </Link>
                   </div>
                 </div>
@@ -444,7 +453,7 @@ export default function SearchPage() {
                 <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">Đang tìm kiếm...</span>
+                    <span className="text-sm">{TextConstants.common.search.loading_indicator[currentLang]}</span>
                   </div>
                 </div>
               )}

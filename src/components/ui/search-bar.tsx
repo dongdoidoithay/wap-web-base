@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
 
 // Import the quick search service
 import { fetchQuickSearch, type QuickSearchResult } from '@/services/quick-search.service';
@@ -24,6 +26,7 @@ const QUICK_SEARCH_CONFIG = {
 
 export function SearchBar() {
   const router = useRouter();
+  const { currentLang } = useLanguage();
   const [query, setQuery] = useState('');
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [quickSearchResults, setQuickSearchResults] = useState<QuickSearchResult[]>([]);
@@ -144,10 +147,10 @@ export function SearchBar() {
         onSubmit={handleFormSubmit}
         className="relative"
         role="search"
-        aria-label="Tìm kiếm truyện"
+        aria-label={TextConstants.common.search[currentLang]}
       >
         <label htmlFor="q" className="sr-only">
-          Tìm kiếm truyện
+          {TextConstants.common.search[currentLang]}
         </label>
         <div className="flex items-center gap-2 rounded-2xl border border-light bg-surface px-3 py-2 shadow-sm">
           <input
@@ -155,7 +158,9 @@ export function SearchBar() {
             id="q"
             name="q"
             type="search"
-            placeholder="Tìm truyện, tác giả..."
+            placeholder={TextConstants.common.search[currentLang] === 'Search' ? 
+              TextConstants.common.search.placeholder.en : 
+              TextConstants.common.search.placeholder.vi}
             value={query}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
@@ -175,7 +180,9 @@ export function SearchBar() {
             type="submit"
             className="rounded-xl px-3 py-1.5 text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
           >
-            Tìm
+            {TextConstants.common.search[currentLang] === 'Search' ? 
+              TextConstants.common.search.button.en : 
+              TextConstants.common.search.button.vi}
           </button>
         </div>
         
@@ -186,7 +193,9 @@ export function SearchBar() {
               {quickSearchResults.length > 0 ? (
                 <>
                   <div className="px-3 py-2 text-xs text-muted border-b border-light">
-                    🔍 Kết quả tìm kiếm nhanh ({quickSearchResults.length})
+                    {TextConstants.common.search[currentLang] === 'Search' ? 
+                      TextConstants.common.search.quick_results.en.replace('{count}', quickSearchResults.length.toString()) : 
+                      TextConstants.common.search.quick_results.vi.replace('{count}', quickSearchResults.length.toString())}
                   </div>
                   <div className="space-y-1 mt-2">
                     {quickSearchResults.map((result, index) => (
@@ -232,10 +241,10 @@ export function SearchBar() {
                             
                             <div className="flex items-center gap-3 mt-2 text-xs text-muted">
                               {result.chapters && (
-                                <span>📚 {result.chapters} chương</span>
+                                <span>📚 {result.chapters} {TextConstants.story.chapters[currentLang]}</span>
                               )}
                               {result.views && (
-                                <span>👁️ {result.views.toLocaleString()}</span>
+                                <span>👁️ {result.views.toLocaleString()} {TextConstants.story.views[currentLang]}</span>
                               )}
                               {result.status && (
                                 <span className="px-2 py-0.5 bg-muted rounded text-xs">
@@ -256,7 +265,9 @@ export function SearchBar() {
                       onClick={() => setIsQuickSearchOpen(false)}
                       className="block w-full text-center py-2 text-sm text-primary hover:text-primary-dark transition-colors"
                     >
-                      Xem tất cả kết quả cho "{query}" →
+                      {TextConstants.common.search[currentLang] === 'Search' ? 
+                        TextConstants.common.search.view_all_results.en.replace('{query}', query) : 
+                        TextConstants.common.search.view_all_results.vi.replace('{query}', query)}
                     </Link>
                   </div>
                 </>
@@ -264,13 +275,25 @@ export function SearchBar() {
                 <div className="p-4 text-center text-muted">
                   {quickSearchError ? (
                     <>
-                      <div className="text-red-500 mb-2">❌ Lỗi tìm kiếm</div>
+                      <div className="text-red-500 mb-2">
+                        {TextConstants.common.search[currentLang] === 'Search' ? 
+                          TextConstants.common.search.search_error.en : 
+                          TextConstants.common.search.search_error.vi}
+                      </div>
                       <div className="text-xs">{quickSearchError}</div>
                     </>
                   ) : (
                     <>
-                      <div className="mb-2">😔 Không tìm thấy kết quả</div>
-                      <div className="text-xs">Thử tìm kiếm với từ khóa khác</div>
+                      <div className="mb-2">😔 
+                        {TextConstants.common.search[currentLang] === 'Search' ? 
+                          TextConstants.common.search.no_results.en : 
+                          TextConstants.common.search.no_results.vi}
+                      </div>
+                      <div className="text-xs">
+                        {TextConstants.common.search[currentLang] === 'Search' ? 
+                          TextConstants.common.search.try_different_keywords.en : 
+                          TextConstants.common.search.try_different_keywords.vi}
+                      </div>
                     </>
                   )}
                 </div>

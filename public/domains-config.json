@@ -61,7 +61,8 @@
         "description": "Truyện tu tiên, kiếm hiệp, huyền huyễn",
         "api-path": "/api/novel-vn",
         "active-default": true,
-        "type": "novel"
+        "type": "novel",
+        "lang": "vi"
       },
       {
         "id": "truyen-six",
@@ -69,7 +70,8 @@
         "description": "Truyện 18+  dành cho các bạn đam mê thể loại 18+",
         "api-path": "/api/six-vn",
         "active-default": false,
-        "type": "novel"
+        "type": "novel",
+        "lang": "vi"
       },
       {
         "id": "truyen-tranh",
@@ -77,7 +79,8 @@
         "description": "Tranh mục dành riêng cho cho các bạn đam mê wibu",
         "api-path": "/api/manga-vn",
         "active-default": false,
-        "type": "manga"
+        "type": "manga",
+        "lang": "en"
       }
     ],
     "content": {}
@@ -143,7 +146,8 @@
         "description": "Truyện tu tiên, kiếm hiệp, huyền huyễn",
         "api-path": "/api/novel-vn",
         "active-default": true,
-        "type": "novel"
+        "type": "novel",
+        "lang": "vi"
       },
       {
         "id": "truyen-six",
@@ -151,7 +155,8 @@
         "description": "Truyện 18+  dành cho các bạn đam mê thể loại 18+",
         "api-path": "/api/six-vn",
         "active-default": false,
-        "type": "novel"
+        "type": "novel",
+        "lang": "vi"
       },
       {
         "id": "truyen-tranh",
@@ -159,7 +164,8 @@
         "description": "Tranh mục dành riêng cho cho các bạn đam mê wibu",
         "api-path": "/api/manga-vn",
         "active-default": false,
-        "type": "manga"
+        "type": "manga",
+        "lang": "vi"
       }
     ]
   },
@@ -224,7 +230,8 @@
         "description": "Truyện tu tiên, kiếm hiệp, huyền huyễn",
         "api-path": "/api/novel-vn",
         "active-default": true,
-        "type": "novel"
+        "type": "novel",
+        "lang": "vi"
       },
       {
         "id": "truyen-six",
@@ -232,7 +239,8 @@
         "description": "Truyện 18+  dành cho các bạn đam mê thể loại 18+",
         "api-path": "/api/six-vn",
         "active-default": false,
-        "type": "novel"
+        "type": "novel",
+        "lang": "vi"
       },
       {
         "id": "truyen-tranh",
@@ -240,7 +248,8 @@
         "description": "Tranh mục dành riêng cho cho các bạn đam mê wibu",
         "api-path": "/api/manga-vn",
         "active-default": false,
-        "type": "manga"
+        "type": "manga",
+        "lang": "vi"
       }
     ]
   }

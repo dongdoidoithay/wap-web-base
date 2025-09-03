@@ -30,7 +30,6 @@ export { SectionControls } from './section-controls';
 export { PerformanceIndicators } from './performance-indicators';
 
 // Development Components
-export { DebugPanel } from './debug-panel';
 
 // Authentication Components
 export { default as FormInput } from './form-input';

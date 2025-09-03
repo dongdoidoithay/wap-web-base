@@ -1,5 +1,8 @@
 'use client';
 
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
+
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
@@ -13,6 +16,8 @@ export function Pagination({
   loading,
   onPageChange
 }: PaginationProps) {
+  const { currentLang } = useLanguage();
+  
   if (totalPages <= 1) {
     return null;
   }
@@ -32,11 +37,13 @@ export function Pagination({
             : 'bg-surface border border-light text-muted cursor-not-allowed'
         }`}
       >
-        ← Trước
+        ← {TextConstants.pagination.previous[currentLang]}
       </button>
       
       <span className="px-3 py-2 text-sm text-body-secondary">
-        Trang {currentPage + 1} / {totalPages}
+        {TextConstants.pagination.page_info[currentLang]
+          .replace('{currentPage}', (currentPage + 1).toString())
+          .replace('{totalPages}', totalPages.toString())}
       </span>
       
       <button
@@ -51,7 +58,7 @@ export function Pagination({
             : 'bg-surface border border-light text-muted cursor-not-allowed'
         }`}
       >
-        Tiếp →
+        {TextConstants.pagination.next[currentLang]} →
       </button>
     </div>
   );

@@ -70,7 +70,7 @@ export interface DomainConfig {
     instagram?: string;
     youtube?: string;
   };
-  // Add cateChip field
+  // Add cateChip field with lang property
   cateChip?: Array<{
     id: string;
     name: string;
@@ -78,6 +78,7 @@ export interface DomainConfig {
     "api-path": string;
     "active-default"?: boolean;
     type?: string;
+    lang?: string;
   }>
 }
 
@@ -197,128 +198,132 @@ async function loadDomainConfigs(): Promise<Record<string, DomainConfig>> {
         console.error('Response text length:', text.length);
         console.error('First 500 characters of response:', text.substring(0, 500));
         console.error('Last 100 characters of response:', text.substring(text.length - 100));
-        throw new Error(`Failed to parse domain configs JSON: ${parseError.message}`);
+        // Return fallback config on parse error
+        return getFallbackDomainConfigs();
       }
       
-      // Apply theme migration to all configs
-      Object.keys(configs).forEach(domain => {
-        configs[domain].theme = migrateThemeConfig(configs[domain].theme);
-      });
+      // Migrate theme configurations
+      const migratedConfigs: Record<string, DomainConfig> = {};
+      for (const [domain, config] of Object.entries(configs)) {
+        migratedConfigs[domain] = {
+          ...config,
+          theme: migrateThemeConfig(config.theme)
+        };
+      }
       
-      domainConfigsCache = configs;
-      return configs;
+      domainConfigsCache = migratedConfigs;
+      return migratedConfigs;
+    } else {
+      // Client: sử dụng relative path
+      const response = await fetch('/domains-config.json');
+      if (!response.ok) {
+        throw new Error(`Failed to load domain configs: ${response.status} ${response.statusText}`);
+      }
+      const configs = await response.json() as Record<string, DomainConfig>;
+      
+      // Migrate theme configurations
+      const migratedConfigs: Record<string, DomainConfig> = {};
+      for (const [domain, config] of Object.entries(configs)) {
+        migratedConfigs[domain] = {
+          ...config,
+          theme: migrateThemeConfig(config.theme)
+        };
+      }
+      
+      domainConfigsCache = migratedConfigs;
+      return migratedConfigs;
     }
-
-    // Client: fetch từ public
-    const response = await fetch('/domains-config.json', { cache: 'no-store' } as RequestInit);
-    if (!response.ok) {
-      throw new Error(`Failed to load domain configs: ${response.status} ${response.statusText}`);
-    }
-    const text = await response.text();
-    let configs: Record<string, DomainConfig>;
-    try {
-      configs = JSON.parse(text) as Record<string, DomainConfig>;
-    } catch (parseError: any) {
-      console.error('JSON Parse Error:', parseError);
-      console.error('Response text length:', text.length);
-      console.error('First 500 characters of response:', text.substring(0, 500));
-      console.error('Last 100 characters of response:', text.substring(text.length - 100));
-      throw new Error(`Failed to parse domain configs JSON: ${parseError.message}`);
-    }
-    
-    // Apply theme migration to all configs
-    Object.keys(configs).forEach(domain => {
-      configs[domain].theme = migrateThemeConfig(configs[domain].theme);
-    });
-    
-    domainConfigsCache = configs;
-    return configs;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error loading domain configs:', error);
-    // Fallback config nếu không thể đọc file
-    const fallbackConfig: Record<string, DomainConfig> = {
-      'example.com': {
-        domain: 'example.com',
-        name: 'WAP Content Hub',
-        description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
-        logo: '🏷️',
-        theme: {
-          // Primary colors
-          primaryColor: '#10B981',      // emerald-500
-          secondaryColor: '#059669',    // emerald-600
-          accentColor: '#34D399',       // emerald-400
-          
-          // Background colors
-          backgroundColor: '#F9FAFB',   // gray-50
-          surfaceColor: '#FFFFFF',      // white
-          
-          // Text colors
-          textPrimary: '#111827',       // gray-900
-          textSecondary: '#6B7280',     // gray-500
-          textMuted: '#9CA3AF',         // gray-400
-          
-          // State colors
-          successColor: '#10B981',      // emerald-500
-          warningColor: '#F59E0B',      // amber-500
-          errorColor: '#EF4444',        // red-500
-          infoColor: '#3B82F6',         // blue-500
-          
-          // Interactive colors
-          linkColor: '#10B981',         // emerald-500
-          linkHoverColor: '#059669',    // emerald-600
-          buttonColor: '#10B981',       // emerald-500
-          buttonTextColor: '#FFFFFF',   // white
-          
-          // Border colors
-          borderColor: '#D1D5DB',       // gray-300
-          borderLightColor: '#E5E7EB',  // gray-200
-          
-          // Focus colors
-          focusColor: '#10B981',        // emerald-500
-          
-          // Gradient colors
-          gradientFrom: '#10B981',      // emerald-500
-          gradientTo: '#059669',        // emerald-600
-        },
-        seo: {
-          title: 'WAP Content Hub — Fast, Mobile-First, SEO Ready',
-          description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
-          keywords: ['Next.js', 'SEO', 'Web Performance', 'Core Web Vitals'],
-          ogImage: '/og.jpg',
-          googleAnalyticsId: 'GA_MEASUREMENT_ID',
-          template: {
-            detail: '%title% - %author% | %domain%',
-            group: '%group% - %domain%',
-            type: '%type% - %domain%',
-          },
-        },
-        content: {
-          categories: ['Tin mới', 'Hướng dẫn', 'Đánh giá', 'Mẹo vặt', 'Phỏng vấn'],
-          featuredArticles: [1, 2, 3],
-        },
-        social: {
-          facebook: 'https://facebook.com/example',
-          twitter: 'https://twitter.com/example',
-        },
-        cateChip: [
-          {
-            id: 'news',
-            name: 'Tin tức',
-            description: 'Tin tức công nghệ mới nhất',
-            "api-path": '/api/news'
-          },
-          {
-            id: 'tutorial',
-            name: 'Hướng dẫn',
-            description: 'Hướng dẫn chi tiết từng bước',
-            "api-path": '/api/tutorial'
-          }
-        ]
-      },
-    };
-    domainConfigsCache = fallbackConfig;
-    return fallbackConfig;
+    // Return fallback config on any error
+    return getFallbackDomainConfigs();
   }
+}
+
+// Fallback domain configurations
+function getFallbackDomainConfigs(): Record<string, DomainConfig> {
+  const fallbackConfig: Record<string, DomainConfig> = {
+    'example.com': {
+      domain: 'example.com',
+      name: 'Example Domain',
+      description: 'A sample domain configuration',
+      logo: '/logo.png',
+      theme: {
+        // Primary colors
+        primaryColor: '#10B981',      // emerald-500
+        secondaryColor: '#059669',    // emerald-600
+        accentColor: '#34D399',       // emerald-400
+        
+        // Background colors
+        backgroundColor: '#F9FAFB',   // gray-50
+        surfaceColor: '#FFFFFF',      // white
+        
+        // Text colors
+        textPrimary: '#111827',       // gray-900
+        textSecondary: '#6B7280',     // gray-500
+        textMuted: '#9CA3AF',         // gray-400
+        
+        // State colors
+        successColor: '#10B981',      // emerald-500
+        warningColor: '#F59E0B',      // amber-500
+        errorColor: '#EF4444',        // red-500
+        infoColor: '#3B82F6',         // blue-500
+        
+        // Interactive colors
+        linkColor: '#10B981',         // emerald-500
+        linkHoverColor: '#059669',    // emerald-600
+        buttonColor: '#10B981',       // emerald-500
+        buttonTextColor: '#FFFFFF',   // white
+        
+        // Border colors
+        borderColor: '#D1D5DB',       // gray-300
+        borderLightColor: '#E5E7EB',  // gray-200
+        
+        // Focus colors
+        focusColor: '#10B981',        // emerald-500
+        
+        // Gradient colors
+        gradientFrom: '#10B981',      // emerald-500
+        gradientTo: '#059669',        // emerald-600
+      },
+      seo: {
+        title: 'WAP Content Hub — Fast, Mobile-First, SEO Ready',
+        description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
+        keywords: ['Next.js', 'SEO', 'Web Performance', 'Core Web Vitals'],
+        ogImage: '/og.jpg',
+        googleAnalyticsId: 'GA_MEASUREMENT_ID',
+        template: {
+          detail: '%title% - %author% | %domain%',
+          group: '%group% - %domain%',
+          type: '%type% - %domain%',
+        },
+      },
+      content: {
+        categories: ['Tin mới', 'Hướng dẫn', 'Đánh giá', 'Mẹo vặt', 'Phỏng vấn'],
+        featuredArticles: [1, 2, 3],
+      },
+      social: {
+        facebook: 'https://facebook.com/example',
+        twitter: 'https://twitter.com/example',
+      },
+      cateChip: [
+        {
+          id: 'news',
+          name: 'Tin tức',
+          description: 'Tin tức công nghệ mới nhất',
+          "api-path": '/api/news'
+        },
+        {
+          id: 'tutorial',
+          name: 'Hướng dẫn',
+          description: 'Hướng dẫn chi tiết từng bước',
+          "api-path": '/api/tutorial'
+        }
+      ]
+    },
+  };
+  domainConfigsCache = fallbackConfig;
+  return fallbackConfig;
 }
 
 export async function refreshDomainConfigsCache(): Promise<void> {

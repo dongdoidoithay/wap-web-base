@@ -1,31 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-
-// Simple SVG icons as components
-const PlusIcon = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-  </svg>
-);
-
-const TrashIcon = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-  </svg>
-);
-
-const PencilIcon = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-  </svg>
-);
-
-const CheckIcon = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-  </svg>
-);
+import { PlusIcon, PencilIcon, TrashIcon, CheckIcon } from 'lucide-react';
+import { TextConstants } from '@/lib/text-constants';
 
 interface CateChip {
   id: string;
@@ -34,6 +11,7 @@ interface CateChip {
   "api-path": string;
   "active-default"?: boolean;
   type?: string;
+  lang?: string; // Make language property optional
 }
 
 interface CateChipManagerProps {
@@ -48,7 +26,8 @@ export function CateChipManager({ cateChips, onChange }: CateChipManagerProps) {
     description: '',
     "api-path": '',
     "active-default": false,
-    type: ''
+    type: '',
+    lang: '' // Add language field
   });
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -56,14 +35,20 @@ export function CateChipManager({ cateChips, onChange }: CateChipManagerProps) {
     if (newCateChip.id.trim() && newCateChip.name.trim()) {
       const updatedCateChips = [...cateChips];
       
+      // Add lang property if it's not empty
+      const chipToAddOrUpdate: CateChip = { ...newCateChip };
+      if (!chipToAddOrUpdate.lang) {
+        delete chipToAddOrUpdate['lang'];
+      }
+      
       if (editingIndex !== null) {
         // Update existing
-        updatedCateChips[editingIndex] = { ...newCateChip };
+        updatedCateChips[editingIndex] = chipToAddOrUpdate;
         setEditingIndex(null);
       } else {
         // Add new
         if (!cateChips.some(chip => chip.id === newCateChip.id)) {
-          updatedCateChips.push({ ...newCateChip });
+          updatedCateChips.push(chipToAddOrUpdate);
         }
       }
       
@@ -85,11 +70,13 @@ export function CateChipManager({ cateChips, onChange }: CateChipManagerProps) {
   };
 
   const editCateChip = (index: number) => {
-    setNewCateChip({ 
-      ...cateChips[index], 
-      "active-default": cateChips[index]["active-default"] || false,
-      type: cateChips[index].type || ''
-    });
+    const chipToEdit: CateChip = { ...cateChips[index] };
+    // Ensure lang property exists
+    if (!chipToEdit.lang) {
+      chipToEdit.lang = '';
+    }
+    
+    setNewCateChip(chipToEdit as any);
     setEditingIndex(index);
   };
 
@@ -100,7 +87,8 @@ export function CateChipManager({ cateChips, onChange }: CateChipManagerProps) {
       description: '',
       "api-path": '',
       "active-default": false,
-      type: ''
+      type: '',
+      lang: '' // Reset language field
     });
   };
 
@@ -125,71 +113,84 @@ export function CateChipManager({ cateChips, onChange }: CateChipManagerProps) {
     <div className="space-y-4">
       <div className="bg-gray-50 p-4 rounded-md">
         <h4 className="text-md font-medium text-gray-900 mb-3">
-          {editingIndex !== null ? 'Chỉnh sửa CateChip' : 'Thêm CateChip mới'}
+          {editingIndex !== null ? TextConstants.category.manager.edit_title.vi : TextConstants.category.manager.add_title.vi}
         </h4>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ID *
+              {TextConstants.category.manager.id_label.vi}
             </label>
             <input
               type="text"
               value={newCateChip.id}
               onChange={(e) => setNewCateChip({ ...newCateChip, id: e.target.value })}
-              placeholder="Ví dụ: truyen-chu"
+              placeholder={TextConstants.category.manager.id_placeholder.vi}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tên *
+              {TextConstants.category.manager.name_label.vi}
             </label>
             <input
               type="text"
               value={newCateChip.name}
               onChange={(e) => setNewCateChip({ ...newCateChip, name: e.target.value })}
-              placeholder="Ví dụ: Truyện Chữ"
+              placeholder={TextConstants.category.manager.name_placeholder.vi}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mô tả
+              {TextConstants.category.manager.description_label.vi}
             </label>
             <input
               type="text"
               value={newCateChip.description}
               onChange={(e) => setNewCateChip({ ...newCateChip, description: e.target.value })}
-              placeholder="Mô tả về cateChip này"
+              placeholder={TextConstants.category.manager.description_placeholder.vi}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Type
+              {TextConstants.category.manager.type_label.vi}
             </label>
             <input
               type="text"
               value={newCateChip.type || ''}
               onChange={(e) => setNewCateChip({ ...newCateChip, type: e.target.value })}
-              placeholder="Ví dụ: novel, manga, audio, video"
+              placeholder={TextConstants.category.manager.type_placeholder.vi}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              API Path
+              {TextConstants.category.manager.language_label.vi}
+            </label>
+            <input
+              type="text"
+              value={newCateChip.lang || ''}
+              onChange={(e) => setNewCateChip({ ...newCateChip, lang: e.target.value })}
+              placeholder={TextConstants.category.manager.language_placeholder.vi}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {TextConstants.category.manager.api_path_label.vi}
             </label>
             <input
               type="text"
               value={newCateChip["api-path"]}
               onChange={(e) => setNewCateChip({ ...newCateChip, "api-path": e.target.value })}
-              placeholder="Ví dụ: /api/novel-vn"
+              placeholder={TextConstants.category.manager.api_path_placeholder.vi}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
@@ -203,7 +204,7 @@ export function CateChipManager({ cateChips, onChange }: CateChipManagerProps) {
               className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
             />
             <label htmlFor="active-default" className="ml-2 block text-sm text-gray-700">
-              Active Default API
+              {TextConstants.category.manager.active_default_label.vi}
             </label>
           </div>
         </div>
@@ -251,6 +252,11 @@ export function CateChipManager({ cateChips, onChange }: CateChipManagerProps) {
                       {cateChip.type && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {cateChip.type}
+                        </span>
+                      )}
+                      {cateChip.lang && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {cateChip.lang}
                         </span>
                       )}
                       {cateChip["active-default"] && (

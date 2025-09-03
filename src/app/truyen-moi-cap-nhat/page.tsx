@@ -23,6 +23,10 @@ import { fetchLatestStories } from '@/services/story-api.service';
 // Types
 import type { StoryItem } from '@/types';
 
+// Contexts
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
+
 // Latest Stories data structure
 interface LatestStoriesData {
   stories: StoryItem[];
@@ -45,6 +49,8 @@ interface LatestStoriesData {
  * 6. Search page styling consistency
  */
 export default function LatestStoriesPage() {
+  const { currentLang } = useLanguage();
+  
   // ========================
   // 1. DOMAIN CONFIGURATION
   // ========================
@@ -193,18 +199,20 @@ export default function LatestStoriesPage() {
   const seoData = React.useMemo(() => {
     if (!domainConfig) {
       return {
-        title: 'Truyện Mới Cập Nhật...',
-        description: 'Đang tải...',
+        title: `${TextConstants.latestStories.title[currentLang]}...`,
+        description: TextConstants.common.loading_data[currentLang],
         canonical: ''
       };
     }
     
-    const title = `Truyện Mới Cập Nhật - ${domainConfig.name}`;
-    const description = `Khám phá ${latestData.total > 0 ? latestData.total : ''} truyện mới cập nhật trên ${domainConfig.name}. Đọc ngay những chương mới nhất của các bộ truyện hot.`;
+    const title = `${TextConstants.latestStories.title[currentLang]} - ${domainConfig.name}`;
+    const description = TextConstants.latestStories.description[currentLang]
+      .replace('{count}', latestData.total > 0 ? latestData.total.toString() : '')
+      .replace('{domainName}', domainConfig.name);
     const canonical = `https://${domainConfig.domain}/truyen-moi-cap-nhat`;
     
     return { title, description, canonical };
-  }, [domainConfig, latestData.total]);
+  }, [domainConfig, latestData.total, currentLang]);
 
   // ========================
   // 8. LOADING STATE
@@ -214,7 +222,7 @@ export default function LatestStoriesPage() {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -243,15 +251,15 @@ export default function LatestStoriesPage() {
               <div className="mx-auto max-w-screen-sm px-3 pt-6 pb-4">
                 <div className="text-center">
                   <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
-                    🔥 Truyện Mới Cập Nhật
+                    {TextConstants.latestStories.page_title[currentLang]}
                   </h1>
                   <p className="text-muted">
                     {latestData.total > 0 ? (
-                      <>Khám phá <strong>{latestData.total}</strong> truyện mới cập nhật{latestData.responseTime && <span className="text-xs"> ({latestData.responseTime}ms)</span>}</>
+                      <>{TextConstants.latestStories.stories_count[currentLang].replace('{count}', latestData.total.toString())}{latestData.responseTime && <span className="text-xs"> ({latestData.responseTime}ms)</span>}</>
                     ) : latestData.loading ? (
-                      'Đang tải danh sách truyện...'
+                      TextConstants.latestStories.loading[currentLang]
                     ) : (
-                      'Danh sách truyện mới cập nhật'
+                      TextConstants.latestStories.description_simple[currentLang]
                     )}
                   </p>
                 </div>
@@ -260,10 +268,10 @@ export default function LatestStoriesPage() {
               {/* BREADCRUMB */}
               <nav className="mx-auto max-w-screen-sm px-3 py-3 space-x-2 text-sm text-muted">
                 <Link href="/" className="hover:text-primary transition-colors">
-                  Trang chủ
+                  {TextConstants.common.home[currentLang]}
                 </Link>
                 <span>›</span>
-                <span className="text-body-primary font-medium">Truyện mới cập nhật</span>
+                <span className="text-body-primary font-medium">{TextConstants.latestStories.breadcrumb[currentLang]}</span>
               </nav>
 
               {/* LATEST STORIES CONTENT */}
@@ -273,29 +281,32 @@ export default function LatestStoriesPage() {
                   <div className="mb-4 text-center">
                     {latestData.loading ? (
                       <p className="text-muted">
-                        🔄 Đang tải truyện mới cập nhật...
+                        {TextConstants.latestStories.loading_stories[currentLang]}
                       </p>
                     ) : latestData.error ? (
                       <p className="text-red-500">
-                        ❌ Lỗi tải dữ liệu: {latestData.error}
+                        {TextConstants.common.error_occurred[currentLang]}: {latestData.error}
                       </p>
                     ) : latestData.stories.length > 0 ? (
                       <p className="text-muted">
-                        ✅ Hiển thị <strong>{latestData.stories.length}</strong> truyện (trang {latestData.currentPage + 1} / {latestData.totalPages})
+                        {TextConstants.latestStories.displaying_stories[currentLang]
+                          .replace('{count}', latestData.stories.length.toString())
+                          .replace('{currentPage}', (latestData.currentPage + 1).toString())
+                          .replace('{totalPages}', latestData.totalPages.toString())}
                         {latestData.responseTime && (
                           <span className="text-xs"> ({latestData.responseTime}ms)</span>
                         )}
                       </p>
                     ) : (
                       <p className="text-muted">
-                        📚 Không có truyện nào
+                        {TextConstants.latestStories.no_stories[currentLang]}
                       </p>
                     )}
                   </div>
 
                   {/* Stories Section */}
                   <StorySection
-                    title={`📚 Danh sách truyện mới cập nhật`}
+                    title={TextConstants.latestStories.story_list_title[currentLang]}
                     error={latestData.error}
                     actions={
                       latestData.stories.length > 0 ? (
@@ -304,7 +315,7 @@ export default function LatestStoriesPage() {
                           disabled={latestData.loading}
                           className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          🔄 Làm mới
+                          {TextConstants.latestStories.refresh[currentLang]}
                         </button>
                       ) : null
                     }
@@ -336,17 +347,17 @@ export default function LatestStoriesPage() {
                       <div className="text-center py-12">
                         <div className="text-6xl mb-4">😔</div>
                         <h3 className="text-lg font-medium text-body-primary mb-2">
-                          Chưa có truyện mới cập nhật
+                          {TextConstants.latestStories.no_stories_title[currentLang]}
                         </h3>
                         <p className="text-muted mb-6">
-                          Hãy quay lại sau để xem những truyện mới nhất
+                          {TextConstants.latestStories.no_stories_description[currentLang]}
                         </p>
                         <div className="space-y-2 text-sm text-muted">
-                          <p>💡 <strong>Gợi ý:</strong></p>
+                          <p>💡 <strong>{TextConstants.common.search.suggestions_title[currentLang]}:</strong></p>
                           <ul className="list-disc list-inside space-y-1 text-left max-w-md mx-auto">
-                            <li>Thử làm mới trang để tải lại dữ liệu</li>
-                            <li>Kiểm tra kết nối mạng của bạn</li>
-                            <li>Quay lại sau để xem cập nhật mới</li>
+                            <li>{TextConstants.latestStories.suggestion_refresh_page[currentLang]}</li>
+                            <li>{TextConstants.latestStories.suggestion_check_connection[currentLang]}</li>
+                            <li>{TextConstants.latestStories.suggestion_come_back_later[currentLang]}</li>
                           </ul>
                         </div>
                         
@@ -355,7 +366,7 @@ export default function LatestStoriesPage() {
                             href="/" 
                             className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
                           >
-                            🏠 Về trang chủ
+                            🏠 {TextConstants.common.home[currentLang]}
                           </Link>
                         </div>
                       </div>
@@ -375,7 +386,7 @@ export default function LatestStoriesPage() {
         <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">Đang tải truyện...</span>
+            <span className="text-sm">{TextConstants.latestStories.loading_indicator[currentLang]}</span>
           </div>
         </div>
       )}

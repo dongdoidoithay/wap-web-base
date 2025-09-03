@@ -23,6 +23,10 @@ import { fetchStoriesByMode } from '@/services/story-api.service';
 // Types
 import type { StoryItem } from '@/types';
 
+// Contexts
+import { useLanguage } from '@/contexts/language-context';
+import { TextConstants } from '@/lib/text-constants';
+
 // Author Stories data structure
 interface AuthorStoriesData {
   stories: StoryItem[];
@@ -46,6 +50,8 @@ interface AuthorStoriesData {
  * 6. Search page styling consistency
  */
 export default function MangaAuthPage() {
+  const { currentLang } = useLanguage();
+  
   // ========================
   // 1. DOMAIN CONFIGURATION
   // ========================
@@ -204,18 +210,23 @@ export default function MangaAuthPage() {
   const seoData = React.useMemo(() => {
     if (!domainConfig || !authorData.authorName) {
       return {
-        title: 'Truyện Theo Tác Giả...',
-        description: 'Đang tải...',
+        title: `${TextConstants.authorStories.title[currentLang]}...`,
+        description: TextConstants.common.loading_data[currentLang],
         canonical: ''
       };
     }
     
-    const title = `Truyện Của Tác Giả ${authorData.authorName} - ${domainConfig.name}`;
-    const description = `Khám phá ${authorData.total > 0 ? authorData.total : ''} truyện của tác giả ${authorData.authorName} trên ${domainConfig.name}. Đọc ngay những tác phẩm mới nhất.`;
+    const title = TextConstants.authorStories.author_stories_title[currentLang]
+      .replace('{authorName}', authorData.authorName)
+      .replace('{domainName}', domainConfig.name);
+    const description = TextConstants.authorStories.author_stories_description[currentLang]
+      .replace('{count}', authorData.total > 0 ? authorData.total.toString() : '')
+      .replace('{authorName}', authorData.authorName)
+      .replace('{domainName}', domainConfig.name);
     const canonical = `https://${domainConfig.domain}/truyen-tac-gia?id=${authorId}`;
     
     return { title, description, canonical };
-  }, [domainConfig, authorData.authorName, authorData.total, authorId]);
+  }, [domainConfig, authorData.authorName, authorData.total, authorId, currentLang]);
 
   // ========================
   // 8. LOADING STATE
@@ -225,7 +236,7 @@ export default function MangaAuthPage() {
     return (
       <div className="min-h-dvh bg-background text-body-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="text-muted">Đang tải cấu hình...</div>
+          <div className="text-muted">{TextConstants.common.loading[currentLang]}</div>
         </div>
       </div>
     );
@@ -255,7 +266,7 @@ export default function MangaAuthPage() {
               <div className="mx-auto max-w-screen-sm px-3 pt-6 pb-4">
                 <div className="text-center">
                   <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
-                    📚 Truyện Của Tác Giả
+                    {TextConstants.authorStories.page_title[currentLang]}
                   </h1>
                   {authorData.authorName && (
                     <h2 className="text-xl md:text-2xl font-semibold text-primary mb-2">
@@ -264,11 +275,11 @@ export default function MangaAuthPage() {
                   )}
                   <p className="text-muted">
                     {authorData.total > 0 ? (
-                      <>Khám phá <strong>{authorData.total}</strong> truyện{authorData.responseTime && <span className="text-xs"> ({authorData.responseTime}ms)</span>}</>
+                      <>{TextConstants.authorStories.stories_count[currentLang].replace('{count}', authorData.total.toString())}{authorData.responseTime && <span className="text-xs"> ({authorData.responseTime}ms)</span>}</>
                     ) : authorData.loading ? (
-                      'Đang tải danh sách truyện...'
+                      TextConstants.authorStories.loading[currentLang]
                     ) : (
-                      'Danh sách truyện theo tác giả'
+                      TextConstants.authorStories.description[currentLang]
                     )}
                   </p>
                 </div>
@@ -277,10 +288,10 @@ export default function MangaAuthPage() {
               {/* BREADCRUMB */}
               <nav className="mx-auto max-w-screen-sm px-3 py-3 space-x-2 text-sm text-muted">
                 <Link href="/" className="hover:text-primary transition-colors">
-                  Trang chủ
+                  {TextConstants.common.home[currentLang]}
                 </Link>
                 <span>›</span>
-                <span className="text-body-primary font-medium">Truyện theo tác giả</span>
+                <span className="text-body-primary font-medium">{TextConstants.authorStories.breadcrumb[currentLang]}</span>
                 {authorData.authorName && (
                   <>
                     <span>›</span>
@@ -296,29 +307,32 @@ export default function MangaAuthPage() {
                   <div className="mb-4 text-center">
                     {authorData.loading ? (
                       <p className="text-muted">
-                        🔄 Đang tải truyện của tác giả...
+                        {TextConstants.authorStories.loading_stories[currentLang]}
                       </p>
                     ) : authorData.error ? (
                       <p className="text-red-500">
-                        ❌ Lỗi tải dữ liệu: {authorData.error}
+                        {TextConstants.common.error_occurred[currentLang]}: {authorData.error}
                       </p>
                     ) : authorData.stories.length > 0 ? (
                       <p className="text-muted">
-                        ✅ Hiển thị <strong>{authorData.stories.length}</strong> truyện (trang {authorData.currentPage + 1} / {authorData.totalPages})
+                        {TextConstants.authorStories.displaying_stories[currentLang]
+                          .replace('{count}', authorData.stories.length.toString())
+                          .replace('{currentPage}', (authorData.currentPage + 1).toString())
+                          .replace('{totalPages}', authorData.totalPages.toString())}
                         {authorData.responseTime && (
                           <span className="text-xs"> ({authorData.responseTime}ms)</span>
                         )}
                       </p>
                     ) : (
                       <p className="text-muted">
-                        📚 Không có truyện nào của tác giả này
+                        {TextConstants.authorStories.no_stories[currentLang]}
                       </p>
                     )}
                   </div>
 
                   {/* Stories Section */}
                   <StorySection
-                    title={`📚 Danh sách truyện của tác giả ${authorData.authorName || ''}`}
+                    title={`${TextConstants.authorStories.story_list_title[currentLang]} ${authorData.authorName || ''}`}
                     error={authorData.error}
                     actions={
                       authorData.stories.length > 0 ? (
@@ -327,7 +341,7 @@ export default function MangaAuthPage() {
                           disabled={authorData.loading}
                           className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          🔄 Làm mới
+                          {TextConstants.authorStories.refresh[currentLang]}
                         </button>
                       ) : null
                     }
@@ -359,17 +373,17 @@ export default function MangaAuthPage() {
                       <div className="text-center py-12">
                         <div className="text-6xl mb-4">😔</div>
                         <h3 className="text-lg font-medium text-body-primary mb-2">
-                          Không tìm thấy truyện của tác giả này
+                          {TextConstants.authorStories.no_stories_title[currentLang]}
                         </h3>
                         <p className="text-muted mb-6">
-                          Hãy kiểm tra lại thông tin tác giả hoặc thử tìm kiếm với từ khóa khác
+                          {TextConstants.authorStories.no_stories_description[currentLang]}
                         </p>
                         <div className="space-y-2 text-sm text-muted">
-                          <p>💡 <strong>Gợi ý:</strong></p>
+                          <p>💡 <strong>{TextConstants.common.search.suggestions_title[currentLang]}:</strong></p>
                           <ul className="list-disc list-inside space-y-1 text-left max-w-md mx-auto">
-                            <li>Thử làm mới trang để tải lại dữ liệu</li>
-                            <li>Kiểm tra kết nối mạng của bạn</li>
-                            <li>Sử dụng chức năng tìm kiếm để tìm tác giả</li>
+                            <li>{TextConstants.authorStories.suggestion_refresh_page[currentLang]}</li>
+                            <li>{TextConstants.authorStories.suggestion_check_connection[currentLang]}</li>
+                            <li>{TextConstants.authorStories.suggestion_use_search[currentLang]}</li>
                           </ul>
                         </div>
                         
@@ -378,7 +392,7 @@ export default function MangaAuthPage() {
                             href="/" 
                             className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
                           >
-                            🏠 Về trang chủ
+                            🏠 {TextConstants.common.home[currentLang]}
                           </Link>
                         </div>
                       </div>
@@ -398,7 +412,7 @@ export default function MangaAuthPage() {
         <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">Đang tải truyện...</span>
+            <span className="text-sm">{TextConstants.authorStories.loading_indicator[currentLang]}</span>
           </div>
         </div>
       )}

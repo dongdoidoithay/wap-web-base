@@ -6,6 +6,7 @@ import { ThemeProvider } from '../components/theme-provider';
 import { ClientOnly } from '../components/client-only';
 import { ServerThemeProvider } from '../components/server-theme-provider';
 import { ApiConfigProvider } from '../components/api-config-provider';
+import { LanguageProvider } from '../contexts/language-context';
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
@@ -82,13 +83,15 @@ export default function RootLayout({
       {/* suppressHydrationWarning prevents hydration errors from browser extensions like Grammarly */}
       <body className="antialiased" suppressHydrationWarning={true}>
         <ServerThemeProvider>
-          <ClientOnly fallback={children}>
-            <ThemeProvider>
-              <ApiConfigProvider>
-                {children}
-              </ApiConfigProvider>
-            </ThemeProvider>
-          </ClientOnly>
+          <LanguageProvider>
+            <ClientOnly fallback={children}>
+              <ThemeProvider>
+                <ApiConfigProvider>
+                  {children}
+                </ApiConfigProvider>
+              </ThemeProvider>
+            </ClientOnly>
+          </LanguageProvider>
         </ServerThemeProvider>
       </body>
     </html>

@@ -2,58 +2,56 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { createDomainBreadcrumb, getLanguageFromPath } from '@/lib/domain-routing';
-import { createNavigationMenu, getApiByLanguage } from '@/lib/dynamic-routes';
+import { useDomain } from '@/hooks/use-domain';
+import { useLanguage } from '@/contexts/language-context';
+import { useActiveApiPath } from '@/hooks/use-active-api-path';
+import { TextConstants } from '@/lib/text-constants';
 
-interface DomainNavigationProps {
-  domain: string;
-  config: any;
-}
-
-export function DomainNavigation({ domain, config }: DomainNavigationProps) {
+export function DomainNavigation() {
   const pathname = usePathname();
-  const breadcrumbs = createDomainBreadcrumb(domain, pathname);
-  const language = getLanguageFromPath(pathname);
-  const navigationMenu = createNavigationMenu(config, domain);
-  const currentApi = getApiByLanguage(config, language);
+  const domainConfig = useDomain();
+  const { currentLang, changeLanguage } = useLanguage();
+  const currentApi = useActiveApiPath();
+
+  // Extract domain from pathname
+  const pathParts = pathname.split('/').filter(Boolean);
+  const currentDomain = pathParts[0] || domainConfig?.domain;
 
   return (
     <div className="bg-surface border-b border-light">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Top Navigation */}
-        <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{config.logo}</span>
-            <div>
-              <h1 className="text-lg font-semibold text-body-primary">{config.name}</h1>
-              <p className="text-xs text-muted">{domain}</p>
-            </div>
-          </div>
-          
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between py-3 gap-3">
           <div className="flex items-center gap-4">
+            <div className="text-sm">
+              <span className="text-body-secondary">Domain:</span>
+              <span className="ml-1 font-medium">{currentDomain}</span>
+            </div>
+            
             {/* Language Toggle */}
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-body-secondary">Language:</span>
-              <Link
-                href={`/${domain}/doc-truyen`}
+              <span className="text-body-secondary">
+                {TextConstants.common.categories[currentLang]}
+              </span>
+              <button
                 className={`px-3 py-1 rounded ${
-                  language === 'vi' 
+                  currentLang === 'vi' 
                     ? 'bg-info text-white' 
                     : 'bg-surface border border-light text-body-secondary hover:bg-primary/10'
                 }`}
+                onClick={() => changeLanguage('vi')}
               >
                 Tiếng Việt
-              </Link>
-              <Link
-                href={`/${domain}/read-manga`}
+              </button>
+              <button
                 className={`px-3 py-1 rounded ${
-                  language === 'en' 
+                  currentLang === 'en' 
                     ? 'bg-success text-white' 
                     : 'bg-surface border border-light text-body-secondary hover:bg-primary/10'
                 }`}
+                onClick={() => changeLanguage('en')}
               >
                 English
-              </Link>
+              </button>
             </div>
             
             {/* API Info */}
@@ -66,38 +64,30 @@ export function DomainNavigation({ domain, config }: DomainNavigationProps) {
         {/* Main Navigation */}
         <nav className="flex items-center gap-6 py-3">
           <Link
-            href={`/${domain}`}
+            href={`/${currentDomain}`}
             className="text-body-secondary hover:text-link transition-colors"
           >
-            Trang chủ
+            {TextConstants.header.home_label[currentLang]}
           </Link>
-          {navigationMenu.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              className="text-body-secondary hover:text-link transition-colors"
-            >
-              {item.title}
-            </Link>
-          ))}
+          <Link
+            href={`/${currentDomain}/categories`}
+            className="text-body-secondary hover:text-link transition-colors"
+          >
+            {TextConstants.common.categories[currentLang]}
+          </Link>
+          <Link
+            href={`/${currentDomain}/search`}
+            className="text-body-secondary hover:text-link transition-colors"
+          >
+            {TextConstants.common.search[currentLang]}
+          </Link>
+          <Link
+            href={`/${currentDomain}/reading-history`}
+            className="text-body-secondary hover:text-link transition-colors"
+          >
+            {TextConstants.common.history[currentLang]}
+          </Link>
         </nav>
-
-        {/* Breadcrumbs */}
-        {breadcrumbs.length > 1 && (
-          <div className="flex items-center gap-2 py-2 text-sm text-body-secondary">
-            {breadcrumbs.map((breadcrumb, index) => (
-              <div key={breadcrumb.href} className="flex items-center gap-2">
-                {index > 0 && <span>/</span>}
-                <Link
-                  href={breadcrumb.href}
-                  className="hover:text-link transition-colors"
-                >
-                  {breadcrumb.name}
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
