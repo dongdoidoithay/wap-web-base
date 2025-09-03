@@ -110,6 +110,24 @@ export interface SearchParams {
   limit?: string;
 }
 
+// Search page props
+export interface SearchPageProps {
+  searchParams?: Promise<{ q?: string; page?: string; category?: string }>;
+}
+
+// Search result interfaces
+export interface SearchResult {
+  keyword: string;
+  results: StoryItem[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  loading: boolean;
+  error: string | null;
+  responseTime?: number;
+  hasSearched: boolean;
+}
+
 // Pagination interfaces (used in optimized service)
 export interface PaginationProps extends PaginationInfo {
   onPageChange: (page: number) => void;

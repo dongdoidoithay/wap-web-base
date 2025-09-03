@@ -1,108 +1,55 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DomainConfig, updateDomainConfig, deleteDomain, addDomain } from '../../../lib/domain-config';
-import { ApiEndpointsDisplay } from '@/components/api-endpoints-display';
+import { 
+  getAllDomains, 
+  getDomainConfig, 
+  updateDomainConfig, 
+  deleteDomain,
+  addDomain,
+  DomainConfig
+} from '@/lib/domain-config';
+import { ThemeColorInput } from '@/components/theme-color-input';
+import { CategoryManager } from '@/components/category-manager';
+import { CateChipManager } from '@/components/cate-chip-manager';
+import { createDefaultConfig } from '@/lib/default-config';
 
-// Function to create default configuration
-function createDefaultConfig(domain: string): DomainConfig {
-  return {
-    domain: domain,
-    name: 'Website Name',
-    description: 'Website description here',
-    logo: '🏷️',
-    theme: {
-      // Primary colors
-      primaryColor: '#10B981',
-      secondaryColor: '#059669',
-      accentColor: '#34D399',
-      
-      // Background colors
-      backgroundColor: '#F9FAFB',
-      surfaceColor: '#FFFFFF',
-      
-      // Text colors
-      textPrimary: '#111827',
-      textSecondary: '#6B7280',
-      textMuted: '#9CA3AF',
-      
-      // State colors
-      successColor: '#10B981',
-      warningColor: '#F59E0B',
-      errorColor: '#EF4444',
-      infoColor: '#3B82F6',
-      
-      // Interactive colors
-      linkColor: '#10B981',
-      linkHoverColor: '#059669',
-      buttonColor: '#10B981',
-      buttonTextColor: '#FFFFFF',
-      
-      // Border colors
-      borderColor: '#D1D5DB',
-      borderLightColor: '#E5E7EB',
-      
-      // Focus colors
-      focusColor: '#10B981',
-      
-      // Gradient colors
-      gradientFrom: '#10B981',
-      gradientTo: '#059669'
-    },
-    seo: {
-      title: 'Default Website Title',
-      description: 'Default website description',
-      keywords: ['keyword1', 'keyword2'],
-      ogImage: '/og.jpg',
-      template: {
-        detail: '%title% - %author% | %domain%',
-        group: '%group% - %domain%',
-        type: '%type% - %domain%'
-      }
-    },
-    content: {
-      categories: ['News', 'Tutorial', 'Review'],
-      featuredArticles: []
-    },
-    social: {
-      facebook: '',
-      twitter: '',
-      instagram: '',
-      youtube: ''
-    },
-    paths: {
-      vietnamese: 'doc-truyen',
-      english: 'read-manga',
-      search: 'tim-kiem'
-    },
-    languages: {
-      default: 'vi' as const,
-      supported: ['vi' as const, 'en' as const]
-    },
-    api: {
-      vietnamese: '/api/manga-vn',
-      english: '/api/manga-en',
-      search: '/api/search',
-      auth: '/api/auth'
-    },
-    routes: {
-      'doc-truyen': {
-        path: 'doc-truyen',
-        api: '/api/manga-vn',
-        language: 'vi' as const,
-        title: 'Đọc Truyện',
-        description: 'Content in Vietnamese'
-      },
-      'read-manga': {
-        path: 'read-manga',
-        api: '/api/manga-en',
-        language: 'en' as const,
-        title: 'Read Content',
-        description: 'Content in English'
-      }
-    }
-  };
-}
+// Custom SVG Icons
+const GlobeAltIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.546-1.955 6.012 6.012 0 017.288 0 6.012 6.012 0 011.546 1.955 6.012 6.012 0 01-1.546 7.945 6.012 6.012 0 01-7.288 0 6.012 6.012 0 01-1.546-1.955 6.012 6.012 0 011.546-7.945z" clipRule="evenodd" />
+  </svg>
+);
+
+const PlusIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+  </svg>
+);
+
+const SaveIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+  </svg>
+);
+
+const RefreshIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+  </svg>
+);
+
+const TrashIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 110-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+  </svg>
+);
+
+const PencilIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+  </svg>
+);
 
 // Function to ensure theme configuration has all required properties
 function ensureCompleteTheme(theme: any) {
@@ -146,7 +93,7 @@ function ensureCompleteTheme(theme: any) {
   };
 }
 
-export default function DomainAdmin() {
+export default function DomainsAdminPage() {
   const [domains, setDomains] = useState<string[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<string>('');
   const [config, setConfig] = useState<DomainConfig | null>(null);
@@ -207,20 +154,33 @@ export default function DomainAdmin() {
       }
     },
     content: { categories: [], featuredArticles: [] },
-    social: {}
+    social: {},
+    // cateChip is intentionally left undefined initially
   });
 
   useEffect(() => {
     fetchDomains();
+    // Also force refresh cache on initial load to ensure we have the latest data
+    forceRefreshCache();
   }, []);
 
   const fetchDomains = async () => {
     try {
       const response = await fetch('/api/domains');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setDomains(data.domains);
+      console.log('Fetched domains data:', data);
+      if (data && data.domains && Array.isArray(data.domains)) {
+        setDomains(data.domains);
+      } else {
+        console.error('Invalid domains data format:', data);
+        setDomains([]);
+      }
     } catch (error) {
       console.error('Error fetching domains:', error);
+      setDomains([]);
     }
   };
 
@@ -228,7 +188,11 @@ export default function DomainAdmin() {
     setLoading(true);
     try {
       const response = await fetch(`/api/domains?hostname=${hostname}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
+      console.log('Fetched domain config for', hostname, ':', data);
       
       // Ensure complete theme configuration
       if (data && data.theme) {
@@ -237,7 +201,8 @@ export default function DomainAdmin() {
       
       setConfig(data);
     } catch (error) {
-      console.error('Error fetching domain config:', error);
+      console.error('Error fetching domain config for', hostname, ':', error);
+      setConfig(null);
     } finally {
       setLoading(false);
     }
@@ -254,8 +219,10 @@ export default function DomainAdmin() {
   const forceRefreshCache = async () => {
     try {
       const response = await fetch('/api/domains/force-refresh', { method: 'POST' });
+      const data = await response.json();
       if (response.ok) {
         alert('Cache đã được force refresh thành công!');
+        console.log('Force refresh response:', data);
         // Reload lại danh sách domains
         fetchDomains();
         if (selectedDomain) {
@@ -263,6 +230,7 @@ export default function DomainAdmin() {
         }
       } else {
         alert('Có lỗi xảy ra khi force refresh cache!');
+        console.error('Force refresh error response:', data);
       }
     } catch (e) {
       console.error('Failed to force refresh cache', e);
@@ -271,16 +239,54 @@ export default function DomainAdmin() {
   };
 
   const handleDomainChange = (hostname: string) => {
+    console.log('Selecting domain:', hostname);
     setSelectedDomain(hostname);
     fetchDomainConfig(hostname);
   };
 
-  const updateConfig = async (updatedConfig: DomainConfig) => {
+  const updateConfig = (updatedFields: Partial<DomainConfig>) => {
+    if (!selectedDomain || !config) return;
+    
+    // Merge the updated fields with the current config
+    const updatedConfig = {
+      ...config,
+      ...updatedFields,
+      theme: {
+        ...config.theme,
+        ...(updatedFields.theme || {})
+      },
+      seo: {
+        ...config.seo,
+        ...(updatedFields.seo || {})
+      },
+      content: {
+        ...config.content,
+        ...(updatedFields.content || {})
+      },
+      social: {
+        ...config.social,
+        ...(updatedFields.social || {})
+      }
+    };
+    
+    // Ensure complete theme configuration
+    updatedConfig.theme = ensureCompleteTheme(updatedConfig.theme);
+    
+    // Update local state only
+    setConfig(updatedConfig);
+  };
+
+  const handleSave = async () => {
+    if (!selectedDomain || !config) {
+      alert('Vui lòng chọn domain trước!');
+      return;
+    }
+    
     try {
       // Ensure complete theme configuration before saving
       const configToSave = {
-        ...updatedConfig,
-        theme: ensureCompleteTheme(updatedConfig.theme)
+        ...config,
+        theme: ensureCompleteTheme(config.theme)
       };
       
       const success = await updateDomainConfig(selectedDomain, configToSave);
@@ -300,14 +306,13 @@ export default function DomainAdmin() {
           window.location.reload();
         }
         
-        alert('Cấu hình đã được cập nhật!');
-        fetchDomainConfig(selectedDomain);
+        alert('Cấu hình đã được lưu!');
       } else {
-        alert('Có lỗi xảy ra khi cập nhật cấu hình!');
+        alert('Có lỗi xảy ra khi lưu cấu hình!');
       }
     } catch (error) {
-      console.error('Error updating config:', error);
-      alert('Có lỗi xảy ra khi cập nhật cấu hình!');
+      console.error('Error saving config:', error);
+      alert('Có lỗi xảy ra khi lưu cấu hình!');
     }
   };
 
@@ -322,7 +327,7 @@ export default function DomainAdmin() {
     }
     
     try {
-      const defaultConfig = createDefaultConfig(selectedDomain);
+      const defaultConfig = createDefaultConfig();
       
       const success = await updateDomainConfig(selectedDomain, defaultConfig);
       if (success) {
@@ -431,7 +436,6 @@ export default function DomainAdmin() {
           description: newConfig.seo?.description || newConfig.description!,
           keywords: newConfig.seo?.keywords || [],
           ogImage: newConfig.seo?.ogImage || '/og.jpg',
-          googleAnalyticsId: newConfig.seo?.googleAnalyticsId,
           template: {
             detail: newConfig.seo?.template?.detail || '%title% - %author% | %domain%',
             group: newConfig.seo?.template?.group || '%group% - %domain%',
@@ -443,44 +447,8 @@ export default function DomainAdmin() {
           featuredArticles: newConfig.content?.featuredArticles || []
         },
         social: newConfig.social || {},
-        paths: {
-          vietnamese: 'doc-truyen',
-          english: 'read-manga',
-          search: 'tim-kiem'
-        },
-        languages: {
-          default: 'vi' as const,
-          supported: ['vi', 'en'] as const
-        },
-        api: {
-          vietnamese: '/api/manga-vn',
-          english: '/api/manga-en',
-          search: '/api/search',
-          auth: '/api/auth'
-        },
-        routes: {
-          'doc-truyen': {
-            path: 'doc-truyen',
-            api: '/api/manga-vn',
-            language: 'vi',
-            title: 'Đọc Truyện',
-            description: 'Truyện tiếng Việt đa dạng thể loại'
-          },
-          'read-manga': {
-            path: 'read-manga',
-            api: '/api/manga-en',
-            language: 'en',
-            title: 'Read Manga',
-            description: 'Manga tiếng Anh chất lượng cao'
-          },
-          'tim-kiem': {
-            path: 'tim-kiem',
-            api: '/api/search',
-            language: 'vi',
-            title: 'Tìm kiếm',
-            description: 'Tìm kiếm truyện và manga'
-          }
-        }
+        // Initialize cateChip as empty array
+        cateChip: []
       };
       
       const success = await addDomain(newDomain, fullConfig);
@@ -561,779 +529,572 @@ export default function DomainAdmin() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-primary">Quản lý Domain</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={reloadCache}
-              className="bg-success text-white px-3 py-2 rounded-md text-sm hover:bg-success/90 transition-colors"
-            >
-              Refresh cache
-            </button>
-            <button
-              onClick={forceRefreshCache}
-              className="bg-error text-white px-3 py-2 rounded-md text-sm hover:bg-error/90 transition-colors"
-              title="Force refresh cache - xóa hoàn toàn cache và load lại từ file"
-            >
-              Force Refresh
-            </button>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Domain List */}
-          <div className="bg-surface rounded-lg shadow p-6 border-l-4 border-primary">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-primary">Danh sách Domain</h2>
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="bg-primary text-white px-3 py-1 rounded-md text-sm hover:bg-primary/90 transition-colors"
-              >
-                {showAddForm ? 'Hủy' : 'Thêm Domain'}
-              </button>
-            </div>
-            
-            {/* Form thêm domain mới */}
-            {showAddForm && (
-              <div className="mb-4 p-4 border border-light rounded-lg bg-surface">
-                <h3 className="text-md font-medium text-primary mb-3">Thêm Domain Mới</h3>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Tên domain (ví dụ: newsite.com)"
-                    value={newDomain}
-                    onChange={(e) => setNewDomain(e.target.value)}
-                    className="w-full p-2 border border-light rounded-md text-sm bg-surface text-body-primary focus:border-primary"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Tên website"
-                    value={newConfig.name}
-                    onChange={(e) => setNewConfig({ ...newConfig, name: e.target.value })}
-                    className="w-full p-2 border border-light rounded-md text-sm bg-surface text-body-primary focus:border-primary"
-                  />
-                  <textarea
-                    placeholder="Mô tả website"
-                    value={newConfig.description}
-                    onChange={(e) => setNewConfig({ ...newConfig, description: e.target.value })}
-                    rows={2}
-                    className="w-full p-2 border border-light rounded-md text-sm bg-surface text-body-primary focus:border-primary"
-                  />
-                  <button
-                    onClick={handleAddDomain}
-                    className="w-full bg-primary text-white py-2 px-4 rounded-md text-sm hover:bg-primary/90 transition-colors"
-                  >
-                    Thêm Domain
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              {domains.map((domain) => (
-                <div key={domain} className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleDomainChange(domain)}
-                    className={`flex-1 text-left p-3 rounded-lg border transition-colors ${
-                      selectedDomain === domain
-                        ? 'border-primary bg-primary/10'
-                        : 'border-light hover:bg-surface'
-                    }`}
-                  >
-                    {domain}
-                  </button>
-                  {domain !== 'example.com' && (
-                    <button
-                      onClick={() => handleDeleteDomain(domain)}
-                      className="p-2 text-error hover:bg-error/10 rounded-md transition-colors"
-                      title="Xóa domain"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+  // Helper functions for updating specific parts of the config
+  const updateThemeConfig = (themeUpdates: Partial<DomainConfig['theme']>) => {
+    if (!config) return;
+    updateConfig({
+      theme: {
+        ...config.theme,
+        ...themeUpdates
+      }
+    });
+  };
 
-          {/* Domain Config */}
-          <div className="lg:col-span-2 bg-surface rounded-lg shadow p-6 border-l-4 border-primary">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="text-muted">Đang tải...</div>
-              </div>
-            ) : config ? (
-              <div>
+  const updateSeoConfig = (seoUpdates: Partial<DomainConfig['seo']>) => {
+    if (!config) return;
+    updateConfig({
+      seo: {
+        ...config.seo,
+        ...seoUpdates
+      }
+    });
+  };
+
+  const updateContentConfig = (contentUpdates: Partial<DomainConfig['content']>) => {
+    if (!config) return;
+    updateConfig({
+      content: {
+        ...config.content,
+        ...contentUpdates
+      }
+    });
+  };
+
+  const updateSocialConfig = (socialUpdates: Partial<DomainConfig['social']>) => {
+    if (!config) return;
+    updateConfig({
+      social: {
+        ...config.social,
+        ...socialUpdates
+      }
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h1 className="text-2xl font-bold text-gray-900">Quản lý Domains</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Quản lý cấu hình cho các domain khác nhau
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+            {/* Domain List */}
+            <div className="lg:col-span-1">
+              <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-primary">
-                    Cấu hình: {config.domain}
-                  </h2>
-                  <button
-                    onClick={handleRestoreDefault}
-                    className="bg-warning text-white px-3 py-1 rounded-md text-sm hover:bg-warning/90 transition-colors"
-                    title="Khôi phục cấu hình mặc định"
-                  >
-                    🔄 Restore Default
-                  </button>
+                  <h2 className="text-lg font-medium text-gray-900">Danh sách Domains</h2>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={forceRefreshCache}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      <RefreshIcon className="h-4 w-4 mr-1" />
+                      Refresh
+                    </button>
+                    <button
+                      onClick={() => setShowAddForm(!showAddForm)}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-1" />
+                      {showAddForm ? 'Hủy' : 'Thêm Domain'}
+                    </button>
+                  </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-body-primary mb-1">
-                      Tên website
-                    </label>
-                    <input
-                      type="text"
-                      value={config.name}
-                      onChange={(e) => setConfig({ ...config, name: e.target.value })}
-                      className="w-full p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-body-primary mb-1">
-                      Mô tả
-                    </label>
-                    <textarea
-                      value={config.description}
-                      onChange={(e) => setConfig({ ...config, description: e.target.value })}
-                      rows={3}
-                      className="w-full p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-body-primary mb-1">
-                      SEO Title
-                    </label>
-                    <input
-                      type="text"
-                      value={config.seo.title}
-                      onChange={(e) => setConfig({
-                        ...config,
-                        seo: { ...config.seo, title: e.target.value }
-                      })}
-                      className="w-full p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-body-primary mb-1">
-                      SEO Description
-                    </label>
-                    <textarea
-                      value={config.seo.description}
-                      onChange={(e) => setConfig({
-                        ...config,
-                        seo: { ...config.seo, description: e.target.value }
-                      })}
-                      rows={2}
-                      className="w-full p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-body-primary mb-1">
-                      Google Analytics ID
-                    </label>
-                    <input
-                      type="text"
-                      value={config.seo.googleAnalyticsId || ''}
-                      onChange={(e) => setConfig({
-                        ...config,
-                        seo: { ...config.seo, googleAnalyticsId: e.target.value }
-                      })}
-                      className="w-full p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                      placeholder="GA_MEASUREMENT_ID"
-                    />
-                  </div>
-
-                  {/* SEO Template Configuration */}
-                  <div className="border-t border-light pt-4">
-                    <h3 className="text-md font-medium text-primary mb-3">SEO Templates</h3>
-                    
+                {/* Add Domain Form */}
+                {showAddForm && (
+                  <div className="mb-4 p-4 bg-white rounded-lg border border-gray-200">
+                    <h3 className="text-md font-medium text-gray-900 mb-3">Thêm Domain mới</h3>
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-body-primary mb-1">
-                          Detail Page Template
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Domain *
                         </label>
                         <input
                           type="text"
-                          value={config.seo.template?.detail || '%title% - %author% | %domain%'}
-                          onChange={(e) => setConfig({
-                            ...config,
-                            seo: { 
-                              ...config.seo, 
-                              template: { 
-                                ...config.seo.template, 
-                                detail: e.target.value 
-                              }
-                            }
-                          })}
-                          className="w-full p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                          placeholder="%title% - %author% | %domain%"
+                          value={newDomain}
+                          onChange={(e) => setNewDomain(e.target.value)}
+                          placeholder="example.com"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         />
-                        <p className="text-xs text-muted mt-1">
-                          Variables: %title%, %author%, %domain%, %category%
-                        </p>
                       </div>
-
                       <div>
-                        <label className="block text-sm font-medium text-body-primary mb-1">
-                          Group Page Template
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tên *
                         </label>
                         <input
                           type="text"
-                          value={config.seo.template?.group || '%group% - %domain%'}
-                          onChange={(e) => setConfig({
-                            ...config,
-                            seo: { 
-                              ...config.seo, 
-                              template: { 
-                                ...config.seo.template, 
-                                group: e.target.value 
-                              }
-                            }
-                          })}
-                          className="w-full p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                          placeholder="%group% - %domain%"
+                          value={newConfig.name || ''}
+                          onChange={(e) => setNewConfig({...newConfig, name: e.target.value})}
+                          placeholder="Tên domain"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         />
-                        <p className="text-xs text-muted mt-1">
-                          Variables: %group%, %domain%, %category%
-                        </p>
                       </div>
-
                       <div>
-                        <label className="block text-sm font-medium text-body-primary mb-1">
-                          Type Page Template
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Mô tả *
                         </label>
-                        <input
-                          type="text"
-                          value={config.seo.template?.type || '%type% - %domain%'}
-                          onChange={(e) => setConfig({
-                            ...config,
-                            seo: { 
-                              ...config.seo, 
-                              template: { 
-                                ...config.seo.template, 
-                                type: e.target.value 
-                              }
-                            }
-                          })}
-                          className="w-full p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                          placeholder="%type% - %domain%"
+                        <textarea
+                          value={newConfig.description || ''}
+                          onChange={(e) => setNewConfig({...newConfig, description: e.target.value})}
+                          placeholder="Mô tả domain"
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         />
-                        <p className="text-xs text-muted mt-1">
-                          Variables: %type%, %domain%, %category%
-                        </p>
                       </div>
+                      <button
+                        onClick={handleAddDomain}
+                        className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        <PlusIcon className="h-4 w-4 mr-1" />
+                        Thêm Domain
+                      </button>
                     </div>
                   </div>
-
-                  {/* Theme Configuration */}
-                  <div className="border-t border-light pt-4">
-                    <h3 className="text-md font-medium text-primary mb-3">Theme Configuration</h3>
-                    
-                    {/* Primary Colors */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-body-primary mb-3">Primary Colors</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-body-primary mb-1">
-                            Primary Color
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.primaryColor || '#10B981'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, primaryColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-light rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.primaryColor || '#10B981'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, primaryColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                              placeholder="#10B981"
-                            />
+                )}
+                
+                <div className="space-y-2">
+                  {domains.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      Không có domain nào. Vui lòng refresh hoặc thêm domain mới.
+                    </div>
+                  ) : (
+                    domains.map((domain) => (
+                      <div
+                        key={domain}
+                        onClick={() => handleDomainChange(domain)}
+                        className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                          selectedDomain === domain
+                            ? 'bg-indigo-100 border border-indigo-300'
+                            : 'bg-white border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <GlobeAltIcon className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">{domain}</div>
+                            </div>
                           </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-body-primary mb-1">
-                            Secondary Color
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.secondaryColor || '#059669'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, secondaryColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-light rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.secondaryColor || '#059669'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, secondaryColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                              placeholder="#059669"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-body-primary mb-1">
-                            Accent Color
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.accentColor || '#34D399'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, accentColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-light rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.accentColor || '#34D399'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, accentColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-light rounded-md bg-surface text-body-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary"
-                              placeholder="#34D399"
-                            />
-                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDomain(domain);
+                            }}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Domain Configuration */}
+            <div className="lg:col-span-2">
+              {loading ? (
+                <div className="text-center text-gray-600 h-64 flex items-center justify-center">
+                  Đang tải cấu hình...
+                </div>
+              ) : selectedDomain && config ? (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-gray-900">
+                      Cấu hình cho {selectedDomain}
+                    </h2>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={handleSave}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        <SaveIcon className="h-4 w-4 mr-1" />
+                        Lưu
+                      </button>
+                      <button
+                        onClick={handleRestoreDefault}
+                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        <RefreshIcon className="h-4 w-4 mr-1" />
+                        Khôi phục mặc định
+                      </button>
                     </div>
-
-                    {/* Background Colors */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-body-primary mb-3">Background Colors</h4>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {/* Domain Info */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">Thông tin cơ bản</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Background Color
+                            Domain
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.backgroundColor || '#F9FAFB'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, backgroundColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.backgroundColor || '#F9FAFB'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, backgroundColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white"
-                              placeholder="#F9FAFB"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={config.domain}
+                            onChange={(e) => updateConfig({ domain: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Surface Color
+                            Tên
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.surfaceColor || '#FFFFFF'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, surfaceColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.surfaceColor || '#FFFFFF'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, surfaceColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white"
-                              placeholder="#FFFFFF"
-                            />
+                          <input
+                            type="text"
+                            value={config.name}
+                            onChange={(e) => updateConfig({ name: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Mô tả
+                          </label>
+                          <textarea
+                            value={config.description}
+                            onChange={(e) => updateConfig({ description: e.target.value })}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Logo
+                          </label>
+                          <input
+                            type="text"
+                            value={config.logo}
+                            onChange={(e) => updateConfig({ logo: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Theme Configuration */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">Theme</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ThemeColorInput
+                          label="Màu chính"
+                          value={config.theme.primaryColor}
+                          onChange={(value: string) => updateThemeConfig({ primaryColor: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu phụ"
+                          value={config.theme.secondaryColor}
+                          onChange={(value: string) => updateThemeConfig({ secondaryColor: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu accent"
+                          value={config.theme.accentColor}
+                          onChange={(value: string) => updateThemeConfig({ accentColor: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu nền"
+                          value={config.theme.backgroundColor}
+                          onChange={(value: string) => updateThemeConfig({ backgroundColor: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu surface"
+                          value={config.theme.surfaceColor}
+                          onChange={(value: string) => updateThemeConfig({ surfaceColor: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu text chính"
+                          value={config.theme.textPrimary}
+                          onChange={(value: string) => updateThemeConfig({ textPrimary: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu text phụ"
+                          value={config.theme.textSecondary}
+                          onChange={(value: string) => updateThemeConfig({ textSecondary: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu text muted"
+                          value={config.theme.textMuted}
+                          onChange={(value: string) => updateThemeConfig({ textMuted: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu thành công"
+                          value={config.theme.successColor}
+                          onChange={(value: string) => updateThemeConfig({ successColor: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu cảnh báo"
+                          value={config.theme.warningColor}
+                          onChange={(value: string) => updateThemeConfig({ warningColor: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu lỗi"
+                          value={config.theme.errorColor}
+                          onChange={(value: string) => updateThemeConfig({ errorColor: value })}
+                        />
+                        <ThemeColorInput
+                          label="Màu info"
+                          value={config.theme.infoColor}
+                          onChange={(value: string) => updateThemeConfig({ infoColor: value })}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* SEO Configuration */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">SEO</h3>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tiêu đề
+                          </label>
+                          <input
+                            type="text"
+                            value={config.seo.title}
+                            onChange={(e) => updateSeoConfig({ title: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Mô tả
+                          </label>
+                          <textarea
+                            value={config.seo.description}
+                            onChange={(e) => updateSeoConfig({ description: e.target.value })}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Ảnh OG
+                          </label>
+                          <input
+                            type="text"
+                            value={config.seo.ogImage}
+                            onChange={(e) => updateSeoConfig({ ogImage: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        
+                        {/* Template Configuration */}
+                        <div className="bg-gray-50 p-4 rounded-md">
+                          <h4 className="text-md font-medium text-gray-800 mb-3">Template SEO</h4>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Trang chi tiết
+                              </label>
+                              <input
+                                type="text"
+                                value={config.seo.template.detail}
+                                onChange={(e) => updateSeoConfig({ 
+                                  template: { 
+                                    ...config.seo.template, 
+                                    detail: e.target.value 
+                                  } 
+                                })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="%title% - %author% | %domain%"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Trang nhóm
+                              </label>
+                              <input
+                                type="text"
+                                value={config.seo.template.group}
+                                onChange={(e) => updateSeoConfig({ 
+                                  template: { 
+                                    ...config.seo.template, 
+                                    group: e.target.value 
+                                  } 
+                                })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="%group% - %domain%"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Trang loại
+                              </label>
+                              <input
+                                type="text"
+                                value={config.seo.template.type}
+                                onChange={(e) => updateSeoConfig({ 
+                                  template: { 
+                                    ...config.seo.template, 
+                                    type: e.target.value 
+                                  } 
+                                })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="%type% - %domain%"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Text Colors */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3">Text Colors</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    {/* SEO Verification Configuration */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">Xác minh SEO</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Primary Text
+                            Google Analytics ID
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.textPrimary || '#111827'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, textPrimary: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.textPrimary || '#111827'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, textPrimary: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white"
-                              placeholder="#111827"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={config.seo.googleAnalyticsId || ''}
+                            onChange={(e) => updateSeoConfig({ googleAnalyticsId: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="GA_MEASUREMENT_ID"
+                          />
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Secondary Text
+                            Google Verification
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.textSecondary || '#6B7280'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, textSecondary: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.textSecondary || '#6B7280'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, textSecondary: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white"
-                              placeholder="#6B7280"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={config.seo.googleVerification || ''}
+                            onChange={(e) => updateSeoConfig({ googleVerification: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="google-verification-code"
+                          />
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Muted Text
+                            Bing Verification
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.textMuted || '#9CA3AF'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, textMuted: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.textMuted || '#9CA3AF'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, textMuted: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white"
-                              placeholder="#9CA3AF"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={config.seo.bingVerification || ''}
+                            onChange={(e) => updateSeoConfig({ bingVerification: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="bing-verification-code"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Yandex Verification
+                          </label>
+                          <input
+                            type="text"
+                            value={config.seo.yandexVerification || ''}
+                            onChange={(e) => updateSeoConfig({ yandexVerification: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="yandex-verification-code"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Baidu Verification
+                          </label>
+                          <input
+                            type="text"
+                            value={config.seo.baiduVerification || ''}
+                            onChange={(e) => updateSeoConfig({ baiduVerification: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="baidu-verification-code"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Naver Verification
+                          </label>
+                          <input
+                            type="text"
+                            value={config.seo.naverVerification || ''}
+                            onChange={(e) => updateSeoConfig({ naverVerification: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="naver-verification-code"
+                          />
                         </div>
                       </div>
                     </div>
-
-                    {/* State Colors */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3">State Colors</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    
+                    {/* Social Configuration */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">Mạng xã hội</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Success
+                            Facebook
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.successColor || '#10B981'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, successColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.successColor || '#10B981'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, successColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white text-xs"
-                              placeholder="#10B981"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={config.social.facebook || ''}
+                            onChange={(e) => updateSocialConfig({ facebook: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Warning
+                            Twitter
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.warningColor || '#F59E0B'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, warningColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.warningColor || '#F59E0B'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, warningColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white text-xs"
-                              placeholder="#F59E0B"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={config.social.twitter || ''}
+                            onChange={(e) => updateSocialConfig({ twitter: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Error
+                            Instagram
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.errorColor || '#EF4444'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, errorColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.errorColor || '#EF4444'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, errorColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white text-xs"
-                              placeholder="#EF4444"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={config.social.instagram || ''}
+                            onChange={(e) => updateSocialConfig({ instagram: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Info
+                            YouTube
                           </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={config.theme?.infoColor || '#3B82F6'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, infoColor: e.target.value }
-                              })}
-                              className="w-12 h-10 border border-gray-300 rounded-md cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={config.theme?.infoColor || '#3B82F6'}
-                              onChange={(e) => setConfig({
-                                ...config,
-                                theme: { ...config.theme, infoColor: e.target.value }
-                              })}
-                              className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:bg-white text-xs"
-                              placeholder="#3B82F6"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={config.social.youtube || ''}
+                            onChange={(e) => updateSocialConfig({ youtube: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
                         </div>
                       </div>
                     </div>
-
-                    {/* Theme Preview */}
-                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-700 mb-4">Theme Preview</h4>
-                      
-                      {/* Primary Colors Preview */}
-                      <div className="mb-4">
-                        <h5 className="text-xs font-medium text-gray-600 mb-2">Primary Colors</h5>
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.primaryColor || '#10B981' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Primary</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.secondaryColor || '#059669' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Secondary</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.accentColor || '#34D399' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Accent</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Background Colors Preview */}
-                      <div className="mb-4">
-                        <h5 className="text-xs font-medium text-gray-600 mb-2">Background Colors</h5>
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.backgroundColor || '#F9FAFB' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Background</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.surfaceColor || '#FFFFFF' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Surface</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Text Colors Preview */}
-                      <div className="mb-4">
-                        <h5 className="text-xs font-medium text-gray-600 mb-2">Text Colors</h5>
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.textPrimary || '#111827' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Primary Text</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.textSecondary || '#6B7280' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Secondary Text</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.textMuted || '#9CA3AF' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Muted Text</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* State Colors Preview */}
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-600 mb-2">State Colors</h5>
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.successColor || '#10B981' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Success</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.warningColor || '#F59E0B' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Warning</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.errorColor || '#EF4444' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Error</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded border border-gray-300"
-                              style={{ backgroundColor: config.theme?.infoColor || '#3B82F6' }}
-                            ></div>
-                            <span className="text-xs text-gray-600">Info</span>
-                          </div>
-                        </div>
-                      </div>
+                    
+                    {/* CateChip Configuration */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">CateChip</h3>
+                      <CateChipManager
+                        cateChips={config.cateChip || []}
+                        onChange={(cateChip: any) => updateConfig({ cateChip })}
+                      />
                     </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 mt-6">
-                    <button
-                      onClick={() => updateConfig(config)}
-                      className="flex-1 bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
-                    >
-                      💾 Cập nhật cấu hình
-                    </button>
-                    <button
-                      onClick={handleRestoreDefault}
-                      className="bg-warning text-white py-2 px-4 rounded-md hover:bg-warning/90 transition-colors"
-                      title="Khôi phục tất cả cấu hình về mặc định"
-                    >
-                      🔄 Restore Default
-                    </button>
-                  </div>
-
-                  {/* API Endpoints Display */}
-                  <div className="mt-6">
-                    <ApiEndpointsDisplay config={config} domain={selectedDomain} />
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center text-gray-600 h-64 flex items-center justify-center">
-                Chọn một domain để xem cấu hình
-              </div>
-            )}
+              ) : (
+                <div className="text-center text-gray-600 h-64 flex items-center justify-center">
+                  Chọn một domain để xem cấu hình
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

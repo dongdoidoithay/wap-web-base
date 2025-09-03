@@ -654,8 +654,18 @@ console.log('reading---1')
 
   const { detail_documents, infoDoc } = state.storyDetail;
   
-  // Format content with proper line breaks
+  // Format content based on type
   const formatContent = (content: string) => {
+    // Get the selected chip type from localStorage
+    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+    
+    // If type is manga, process content as images separated by #
+    if (selectedType === 'manga') {
+      const imageUrls = content.split('#').filter(url => url.trim().length > 0);
+      return imageUrls.map(url => `<img src="${url.trim()}" alt="Manga page" class="w-full h-auto mb-0" />`).join('');
+    }
+    
+    // Default behavior for novel and other types (text content)
     return content
       .split('\r\n\r\n')
       .map(paragraph => paragraph.trim())
@@ -1071,12 +1081,18 @@ console.log('reading---1')
                 <p className="text-sm text-muted mb-3">
                   Bạn đang đọc <strong>{detail_documents.nameChapter}</strong> thuộc truyện <strong>{infoDoc.name}</strong>
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
                   <div>
-                    <span className="font-medium">Tác giả:</span> {infoDoc.authName}
+                    <span className="font-medium">Tác giả:</span>
+                    {infoDoc.authName.split(',').map((auth, index) => (
+                      <Link key={index} href={`/truyen-tac-gia?name=${encodeURIComponent(auth)}&id=${encodeURIComponent(infoDoc.auth.split(',')[index])}`} className="text-primary hover:underline">{auth}</Link>
+                      ))}
                   </div>
                   <div>
-                    <span className="font-medium">Thể loại:</span> {infoDoc.genresName}
+                    <span className="font-medium">Thể loại:</span> 
+                    {infoDoc.genresName.split(',').map((genre, index) => (
+                      <Link key={index} href={`/truyen-danh-muc?name=${encodeURIComponent(genre)}&id=${encodeURIComponent(infoDoc.genres.split(',')[index])}`} className="text-primary hover:underline">{genre}</Link>
+                      ))}
                   </div>
                   <div>
                     <span className="font-medium">Trạng thái:</span> {infoDoc.statusName}
@@ -1086,12 +1102,12 @@ console.log('reading---1')
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Link
+                 {/*  <Link
                     href={`/${params.idDoc}`}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
                   >
                     📖 Thông tin truyện
-                  </Link>
+                  </Link> */}
                   <Link
                     href="/"
                     className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm"

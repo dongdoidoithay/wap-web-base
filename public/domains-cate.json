@@ -1,0 +1,129 @@
+{
+  "example.com":[
+    { "id": "truyen-six",
+      "name":"Truyện Six",
+    "description": "mô tả truyện vui",
+  }
+  ],
+  "techblog.com": {
+    "domain": "techblog.com",
+    "name": "Tech Blog Hub 222",
+    "description": "Cập nhật tin tức công nghệ mới nhất, hướng dẫn lập trình và đánh giá sản phẩm.",
+    "logo": "💻",
+    "theme": {
+      "primaryColor": "#10B981",
+      "secondaryColor": "#059669",
+      "accentColor": "#34D399",
+      "backgroundColor": "#F9FAFB",
+      "surfaceColor": "#FFFFFF",
+      "textPrimary": "#111827",
+      "textSecondary": "#6B7280",
+      "textMuted": "#9CA3AF",
+      "successColor": "#10B981",
+      "warningColor": "#F59E0B",
+      "errorColor": "#EF4444",
+      "infoColor": "#3B82F6",
+      "linkColor": "#10B981",
+      "linkHoverColor": "#059669",
+      "buttonColor": "#10B981",
+      "buttonTextColor": "#FFFFFF",
+      "borderColor": "#D1D5DB",
+      "borderLightColor": "#E5E7EB",
+      "focusColor": "#10B981",
+      "gradientFrom": "#10B981",
+      "gradientTo": "#059669"
+    },
+    "seo": {
+      "title": "Tech Blog Hub - Tin tức công nghệ và hướng dẫn lập trình",
+      "description": "Cập nhật tin tức công nghệ mới nhất, hướng dẫn lập trình và đánh giá sản phẩm.",
+      "keywords": [
+        "Công nghệ",
+        "Lập trình",
+        "Tin tức",
+        "Đánh giá",
+        "Hướng dẫn"
+      ],
+      "ogImage": "/tech-og.jpg",
+      "googleAnalyticsId": "GA_TECH_ID"
+    },
+    "content": {
+      "categories": [
+        "Tin tức",
+        "Lập trình",
+        "Đánh giá",
+        "Tutorial",
+        "AI/ML"
+      ],
+      "featuredArticles": [
+        1,
+        2,
+        3
+      ]
+    },
+    "social": {
+      "facebook": "https://facebook.com/techblog",
+      "twitter": "https://twitter.com/techblog",
+      "youtube": "https://youtube.com/techblog"
+    }
+  },
+  "lifestyle.com": {
+    "domain": "lifestyle.com",
+    "name": "Lifestyle Magazine",
+    "description": "Chia sẻ về cuộc sống, sức khỏe, du lịch và những điều thú vị trong cuộc sống.",
+    "logo": "🌟",
+    "theme": {
+      "primaryColor": "#10B981",
+      "secondaryColor": "#059669",
+      "accentColor": "#34D399",
+      "backgroundColor": "#F9FAFB",
+      "surfaceColor": "#FFFFFF",
+      "textPrimary": "#111827",
+      "textSecondary": "#6B7280",
+      "textMuted": "#9CA3AF",
+      "successColor": "#10B981",
+      "warningColor": "#F59E0B",
+      "errorColor": "#EF4444",
+      "infoColor": "#3B82F6",
+      "linkColor": "#10B981",
+      "linkHoverColor": "#059669",
+      "buttonColor": "#10B981",
+      "buttonTextColor": "#FFFFFF",
+      "borderColor": "#D1D5DB",
+      "borderLightColor": "#E5E7EB",
+      "focusColor": "#10B981",
+      "gradientFrom": "#10B981",
+      "gradientTo": "#059669"
+    },
+    "seo": {
+      "title": "Lifestyle Magazine - Chia sẻ cuộc sống đẹp",
+      "description": "Chia sẻ về cuộc sống, sức khỏe, du lịch và những điều thú vị trong cuộc sống.",
+      "keywords": [
+        "Lifestyle",
+        "Sức khỏe",
+        "Du lịch",
+        "Ẩm thực",
+        "Thời trang"
+      ],
+      "ogImage": "/lifestyle-og.jpg",
+      "googleAnalyticsId": "GA_LIFESTYLE_ID"
+    },
+    "content": {
+      "categories": [
+        "Sức khỏe",
+        "Du lịch",
+        "Ẩm thực",
+        "Thời trang",
+        "Làm đẹp"
+      ],
+      "featuredArticles": [
+        1,
+        2,
+        3
+      ]
+    },
+    "social": {
+      "instagram": "https://instagram.com/lifestyle",
+      "facebook": "https://facebook.com/lifestyle"
+    }
+  }
+}

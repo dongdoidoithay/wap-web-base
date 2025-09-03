@@ -70,33 +70,15 @@ export interface DomainConfig {
     instagram?: string;
     youtube?: string;
   };
-  // Thêm cấu hình cho multi-path và API
-  paths: {
-    vietnamese: string; // Ví dụ: 'doc-truyen'
-    english: string;    // Ví dụ: 'read-manga'
-    search: string;     // Ví dụ: 'tim-kiem'
-  };
-  languages: {
-    default: 'vi' | 'en';
-    supported: ('vi' | 'en')[];
-  };
-  // Cấu hình API endpoints
-  api: {
-    vietnamese: string; // Ví dụ: '/api/manga-vn'
-    english: string;    // Ví dụ: '/api/manga-en'
-    search: string;     // Ví dụ: '/api/search'
-    auth: string;       // Ví dụ: '/api/auth'
-  };
-  // Cấu hình routes động
-  routes: {
-    [key: string]: {
-      path: string;
-      api: string;
-      language: 'vi' | 'en';
-      title: string;
-      description: string;
-    };
-  };
+  // Add cateChip field
+  cateChip?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    "api-path": string;
+    "active-default"?: boolean;
+    type?: string;
+  }>
 }
 
 // Cache để lưu cấu hình domains
@@ -204,9 +186,19 @@ async function loadDomainConfigs(): Promise<Record<string, DomainConfig>> {
         || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${process.env.PORT || 3000}`);
       const response = await fetch(`${baseUrl}/domains-config.json`, { cache: 'no-store' } as RequestInit);
       if (!response.ok) {
-        throw new Error('Failed to load domain configs');
+        throw new Error(`Failed to load domain configs: ${response.status} ${response.statusText}`);
       }
-      const configs = (await response.json()) as Record<string, DomainConfig>;
+      const text = await response.text();
+      let configs: Record<string, DomainConfig>;
+      try {
+        configs = JSON.parse(text) as Record<string, DomainConfig>;
+      } catch (parseError: any) {
+        console.error('JSON Parse Error:', parseError);
+        console.error('Response text length:', text.length);
+        console.error('First 500 characters of response:', text.substring(0, 500));
+        console.error('Last 100 characters of response:', text.substring(text.length - 100));
+        throw new Error(`Failed to parse domain configs JSON: ${parseError.message}`);
+      }
       
       // Apply theme migration to all configs
       Object.keys(configs).forEach(domain => {
@@ -220,9 +212,19 @@ async function loadDomainConfigs(): Promise<Record<string, DomainConfig>> {
     // Client: fetch từ public
     const response = await fetch('/domains-config.json', { cache: 'no-store' } as RequestInit);
     if (!response.ok) {
-      throw new Error('Failed to load domain configs');
+      throw new Error(`Failed to load domain configs: ${response.status} ${response.statusText}`);
     }
-    const configs = (await response.json()) as Record<string, DomainConfig>;
+    const text = await response.text();
+    let configs: Record<string, DomainConfig>;
+    try {
+      configs = JSON.parse(text) as Record<string, DomainConfig>;
+    } catch (parseError: any) {
+      console.error('JSON Parse Error:', parseError);
+      console.error('Response text length:', text.length);
+      console.error('First 500 characters of response:', text.substring(0, 500));
+      console.error('Last 100 characters of response:', text.substring(text.length - 100));
+      throw new Error(`Failed to parse domain configs JSON: ${parseError.message}`);
+    }
     
     // Apply theme migration to all configs
     Object.keys(configs).forEach(domain => {
@@ -234,7 +236,7 @@ async function loadDomainConfigs(): Promise<Record<string, DomainConfig>> {
   } catch (error) {
     console.error('Error loading domain configs:', error);
     // Fallback config nếu không thể đọc file
-    const fallbackConfig = {
+    const fallbackConfig: Record<string, DomainConfig> = {
       'example.com': {
         domain: 'example.com',
         name: 'WAP Content Hub',
@@ -298,46 +300,22 @@ async function loadDomainConfigs(): Promise<Record<string, DomainConfig>> {
           facebook: 'https://facebook.com/example',
           twitter: 'https://twitter.com/example',
         },
-        paths: {
-          vietnamese: 'doc-truyen',
-          english: 'read-manga',
-          search: 'tim-kiem',
-        },
-        languages: {
-          default: 'vi' as const,
-          supported: ['vi', 'en'] as const,
-        },
-        api: {
-          vietnamese: '/api/manga-vn',
-          english: '/api/manga-en',
-          search: '/api/search',
-          auth: '/api/auth',
-        },
-        routes: {
-          'doc-truyen': {
-            path: 'doc-truyen',
-            api: '/api/manga-vn',
-            language: 'vi',
-            title: 'Đọc Truyện',
-            description: 'Truyện tiếng Việt đa dạng thể loại',
+        cateChip: [
+          {
+            id: 'news',
+            name: 'Tin tức',
+            description: 'Tin tức công nghệ mới nhất',
+            "api-path": '/api/news'
           },
-          'read-manga': {
-            path: 'read-manga',
-            api: '/api/manga-en',
-            language: 'en',
-            title: 'Read Manga',
-            description: 'Manga tiếng Anh chất lượng cao',
-          },
-          'tim-kiem': {
-            path: 'tim-kiem',
-            api: '/api/search',
-            language: 'vi',
-            title: 'Tìm kiếm',
-            description: 'Tìm kiếm truyện và manga',
-          },
-        },
+          {
+            id: 'tutorial',
+            name: 'Hướng dẫn',
+            description: 'Hướng dẫn chi tiết từng bước',
+            "api-path": '/api/tutorial'
+          }
+        ]
       },
-    } as Record<string, DomainConfig>;
+    };
     domainConfigsCache = fallbackConfig;
     return fallbackConfig;
   }
@@ -479,44 +457,20 @@ export function getDomainConfigSync(hostname: string): DomainConfig {
       facebook: 'https://facebook.com/example',
       twitter: 'https://twitter.com/example',
     },
-    paths: {
-      vietnamese: 'doc-truyen',
-      english: 'read-manga',
-      search: 'tim-kiem',
-    },
-    languages: {
-      default: 'vi' as const,
-      supported: ['vi', 'en'] as const,
-    },
-    api: {
-      vietnamese: '/api/manga-vn',
-      english: '/api/manga-en',
-      search: '/api/search',
-      auth: '/api/auth',
-    },
-    routes: {
-      'doc-truyen': {
-        path: 'doc-truyen',
-        api: '/api/manga-vn',
-        language: 'vi',
-        title: 'Đọc Truyện',
-        description: 'Truyện tiếng Việt đa dạng thể loại',
+    cateChip: [
+      {
+        id: 'news',
+        name: 'Tin tức',
+        description: 'Tin tức công nghệ mới nhất',
+        "api-path": '/api/news'
       },
-      'read-manga': {
-        path: 'read-manga',
-        api: '/api/manga-en',
-        language: 'en',
-        title: 'Read Manga',
-        description: 'Manga tiếng Anh chất lượng cao',
-      },
-      'tim-kiem': {
-        path: 'tim-kiem',
-        api: '/api/search',
-        language: 'vi',
-        title: 'Tìm kiếm',
-        description: 'Tìm kiếm truyện và manga',
-      },
-    },
+      {
+        id: 'tutorial',
+        name: 'Hướng dẫn',
+        description: 'Hướng dẫn chi tiết từng bước',
+        "api-path": '/api/tutorial'
+      }
+    ]
   };
 }
 

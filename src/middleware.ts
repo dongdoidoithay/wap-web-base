@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
   
-  if (isProtectedRoute || isAuthRoute) {
+/*   if (isProtectedRoute || isAuthRoute) {
     // Get token from cookie or Authorization header
     const cookieToken = request.cookies.get('auth_token')?.value;
     const authHeader = request.headers.get('authorization');
@@ -42,7 +42,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }
   }
-  
+   */
   // Add domain info to headers for use in components
   const response = NextResponse.next();
   response.headers.set('x-domain', config.domain);
@@ -53,7 +53,7 @@ export function middleware(request: NextRequest) {
   const isAuthenticated = token ? verifyToken(token).isValid : false;
   response.headers.set('x-authenticated', isAuthenticated.toString());
   
-  // Optional: Redirect www to non-www or vice versa
+/*   // Optional: Redirect www to non-www or vice versa
   if (domain.startsWith('www.') && !config.domain.startsWith('www.')) {
     const newUrl = request.nextUrl.clone();
     newUrl.hostname = config.domain;
@@ -65,7 +65,7 @@ export function middleware(request: NextRequest) {
     const newUrl = request.nextUrl.clone();
     newUrl.hostname = config.domain;
     return NextResponse.redirect(newUrl, 301);
-  }
+  } */
   
   return response;
 }

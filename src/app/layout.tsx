@@ -5,6 +5,7 @@ import { getDomainConfigSync } from '../lib/domain-config';
 import { ThemeProvider } from '../components/theme-provider';
 import { ClientOnly } from '../components/client-only';
 import { ServerThemeProvider } from '../components/server-theme-provider';
+import { ApiConfigProvider } from '../components/api-config-provider';
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
@@ -83,7 +84,9 @@ export default function RootLayout({
         <ServerThemeProvider>
           <ClientOnly fallback={children}>
             <ThemeProvider>
-              {children}
+              <ApiConfigProvider>
+                {children}
+              </ApiConfigProvider>
             </ThemeProvider>
           </ClientOnly>
         </ServerThemeProvider>

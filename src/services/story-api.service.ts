@@ -3,7 +3,7 @@
  * Handles all API data fetching, caching, and data transformation for story-related endpoints
  */
 
-import { STORY_API_CONFIG, getStoryCacheTtl, type ApiServiceConfig } from '../lib/api-config';
+import { getStoryApiConfig, getStoryCacheTtl, type ApiServiceConfig } from '../lib/api-config';
 
 // API Interfaces
 export interface StoryItem {
@@ -45,6 +45,33 @@ export interface CacheEntry<T> {
   data: T;
   timestamp: number;
   expiresAt: number;
+}
+
+// Variable to hold the current API path
+let currentApiPath = typeof window !== 'undefined' 
+  ? localStorage.getItem('selectedApiPath') || '/api/novel-vn'
+  : '/api/novel-vn';
+
+/**
+ * Set the current API path
+ */
+export function setCurrentApiPath(apiPath: string): void {
+  currentApiPath = apiPath;
+  apiConfig = getStoryApiConfig(currentApiPath);
+}
+
+/**
+ * Get the current API path
+ */
+export function getCurrentApiPath(): string {
+  return currentApiPath;
+}
+
+/**
+ * Get API configuration with current API path
+ */
+export function getApiConfig(): ApiServiceConfig {
+  return getStoryApiConfig(currentApiPath);
 }
 
 /**
@@ -107,8 +134,8 @@ async function apiFetch(
   throw new Error('Maximum retries exceeded');
 }
 
-// Use centralized API configuration
-const apiConfig = STORY_API_CONFIG;
+// Use centralized API configuration with dynamic API path
+let apiConfig = getStoryApiConfig(currentApiPath);
 
 /**
  * Transform function for API response items
@@ -234,6 +261,9 @@ export async function fetchLatestStories(
   limit: number = 22, 
   page: number = 0
 ) {
+  // Update API config with current path
+  apiConfig = getApiConfig();
+  
   const startTime = Date.now();
   
   try {
@@ -311,6 +341,9 @@ export async function fetchTopFollowStories(
   limit: number = 10, 
   page: number = 0
 ) {
+  // Update API config with current path
+  apiConfig = getApiConfig();
+  
   const startTime = Date.now();
   
   try {
@@ -380,6 +413,9 @@ export async function fetchTopFollowStories(
 export async function fetchTopDayStories(
   limit: number = 100
 ) {
+  // Update API config with current path
+  apiConfig = getApiConfig();
+  
   const startTime = Date.now();
   
   try {
@@ -437,21 +473,195 @@ export async function fetchTopDayStories(
   }
 }
 
-// Configuration management
-
 /**
- * Update API configuration
+ * Fetch stories by mode (auth or genres) with pagination - calls external API directly with retry mechanism
  */
-export function updateApiConfig(config: Partial<ApiServiceConfig>): void {
-  Object.assign(apiConfig, config);
-  console.log('API configuration updated', config);
+export async function fetchStoriesByMode(
+  mode: 'auth' | 'genres',
+  id: string,
+  count: number = 22,
+  page: number = 0
+) {
+  // Update API config with current path
+  apiConfig = getApiConfig();
+  
+  const startTime = Date.now();
+  
+  try {
+    const externalApiUrl = `${apiConfig.baseUrl}/getFindOption/${mode}/${id}/${count}/${page}`;
+    console.log(`[StoryApiService] 🚀 Starting ${mode} stories request (id: ${id}, count: ${count}, page: ${page})`);
+    console.log(`[StoryApiService] 🌐 Request URL: ${externalApiUrl}`);
+    console.log(`[StoryApiService] ⚙️ Config: timeout=${apiConfig.timeout}ms, baseUrl=${apiConfig.baseUrl}`);
+    
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (compatible; StoryReader/1.0)'
+      },
+      cache: 'no-store' as RequestCache
+    };
+    
+    // Use retry mechanism with built-in timeout handling (1 retry for faster response)
+    const response = await apiFetch(externalApiUrl, fetchOptions, 1, 1000, apiConfig.timeout);
+    
+    const rawData = await response.json();
+    const transformedData = Array.isArray(rawData) 
+      ? rawData.map(transformItem)
+      : rawData.data ? rawData.data.map(transformItem) : [];
+    
+    const responseTime = Date.now() - startTime;
+    console.log(`[StoryApiService] ✅ ${mode} stories API completed successfully in ${responseTime}ms (${transformedData.length} items)`);
+    
+    return {
+      data: transformedData,
+      total: rawData.totalRecode || rawData.total || 0,
+      totalPage: rawData.totalPage || Math.ceil((rawData.totalRecode || rawData.total || 0) / count),
+      page: page,
+      limit: count,
+      success: true,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Enhanced logging with structured error information
+    console.error(`[StoryApiService] ❌ ${mode} stories failed after ${responseTime}ms:`, {
+      error: errorMessage,
+      requestUrl: `${apiConfig.baseUrl}/getFindOption/${mode}/${id}/${count}/${page}`,
+      apiConfig: {
+        baseUrl: apiConfig.baseUrl,
+        timeout: apiConfig.timeout,
+        requestParams: { mode, id, count, page }
+      }
+    });
+    
+    return {
+      data: [],
+      total: 0,
+      totalPage: 0,
+      page: page,
+      limit: count,
+      success: false,
+      message: errorMessage,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+  }
 }
 
 /**
- * Get current API configuration
+ * Search stories by keyword - calls external API directly with retry mechanism
  */
-export function getApiConfig(): ApiServiceConfig {
-  return { ...apiConfig };
+export async function fetchSearchStories(
+  count: number = 20,
+  page: number = 0,
+  keyword: string = ''
+): Promise<ApiResponse<StoryItem>> {
+  // Update API config with current path
+  apiConfig = getApiConfig();
+  
+  const startTime = Date.now();
+
+  try {
+    if (!keyword.trim()) {
+      return {
+        data: [],
+        total: 0,
+        totalPage: 0,
+        page: page,
+        limit: count,
+        success: false,
+        message: 'Keyword is required for search',
+        cacheStatus: 'DISABLED',
+        responseTime: Date.now() - startTime
+      };
+    }
+
+    console.log(`[StoryApiService] 🔍 Starting search request: keyword="${keyword}", count=${count}, page=${page}`);
+    
+    // Encode keyword for URL safety
+    const encodedKeyword = encodeURIComponent(keyword.trim());
+    const externalApiUrl = `${apiConfig.baseUrl}/SeachPage/${count}/${page}/${encodedKeyword}`;
+    console.log(`[StoryApiService] 📡 Search API URL: ${externalApiUrl}`);
+    
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (compatible; StoryReader/1.0)'
+      },
+      cache: 'no-store' as RequestCache
+    };
+    
+    // Use retry mechanism with built-in timeout handling
+    const response = await apiFetch(externalApiUrl, fetchOptions, 2, 1000, apiConfig.timeout);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const rawData = await response.json();
+    console.log('[StoryApiService] Search API response:', rawData);
+    
+    // Transform the response data
+    const transformedData = Array.isArray(rawData) 
+      ? rawData.map(transformItem)
+      : rawData.data ? rawData.data.map(transformItem) : [];
+    
+    const responseTime = Date.now() - startTime;
+    console.log(`[StoryApiService] ✅ Search completed successfully in ${responseTime}ms (${transformedData.length} results for "${keyword}")`);
+    
+    return {
+      data: transformedData,
+      total: rawData.totalRecode || transformedData.length,
+      totalPage: rawData.totalPage || Math.ceil((rawData.totalRecode || transformedData.length) / count),
+      page: page,
+      limit: count,
+      success: true,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const responseTime = Date.now() - startTime;
+    
+    console.error(`[StoryApiService] ❌ Search failed after ${responseTime}ms:`, {
+      error: errorMessage,
+      keyword,
+      url: `${apiConfig.baseUrl}/SeachPage/${count}/${page}/${encodeURIComponent(keyword)}`,
+      timeout: apiConfig.timeout
+    });
+    
+    return {
+      data: [],
+      total: 0,
+      totalPage: 0,
+      page: page,
+      limit: count,
+      success: false,
+      message: errorMessage,
+      cacheStatus: 'DISABLED',
+      responseTime
+    };
+  }
+}
+
+/**
+ * Update API configuration with new API path
+ */
+export function updateApiConfigWithActivePath(apiPath: string): void {
+  setCurrentApiPath(apiPath);
+  apiConfig = getApiConfig();
+  console.log('API configuration updated with active API path', apiPath);
 }
 
 // Re-export types for external use
@@ -462,8 +672,10 @@ export const StoryApiService = {
   fetchLatestStories,
   fetchTopFollowStories,
   fetchTopDayStories,
+  fetchStoriesByMode,
+  fetchSearchStories,
   clientApiCall,
-  updateApiConfig,
+  updateApiConfigWithActivePath,
   getApiConfig,
 };
 

@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Base API settings
   BASE_URL: 'https://api.mangago.fit',
-  STORY_API_PATH: '/api/novel-vn',
+  // API_PATH will be dynamically determined
   TIMEOUT: 5000, // Reduced to 5 seconds for faster failure detection
   
   // Cache settings
@@ -35,6 +35,13 @@ export const API_CONFIG = {
   } as Record<string, string>,
 } as const;
 
+// Function to get the API path based on the active cateChip
+export function getActiveApiPath(): string {
+  // This function should be used in server components or when the hook is not available
+  // For client components, use the useActiveApiPath hook instead
+  return '/api/novel-vn'; // Default fallback
+}
+
 // API Service Configuration Interface
 export interface ApiServiceConfig {
   baseUrl: string;
@@ -47,17 +54,19 @@ export interface ApiServiceConfig {
   };
 }
 
-// Story API specific configuration
-export const STORY_API_CONFIG: ApiServiceConfig = {
-  baseUrl: `${API_CONFIG.BASE_URL}${API_CONFIG.STORY_API_PATH}`,
-  timeout: API_CONFIG.TIMEOUT,
-  defaultHeaders: API_CONFIG.DEFAULT_HEADERS,
-  cache: {
-    enabled: API_CONFIG.CACHE.ENABLED,
-    defaultTtl: API_CONFIG.CACHE.DEFAULT_TTL,
-    maxEntries: API_CONFIG.CACHE.MAX_ENTRIES,
-  },
-};
+// Function to get the story API configuration with dynamic API path
+export function getStoryApiConfig(apiPath: string = '/api/novel-vn'): ApiServiceConfig {
+  return {
+    baseUrl: `${API_CONFIG.BASE_URL}${apiPath}`,
+    timeout: API_CONFIG.TIMEOUT,
+    defaultHeaders: API_CONFIG.DEFAULT_HEADERS,
+    cache: {
+      enabled: API_CONFIG.CACHE.ENABLED,
+      defaultTtl: API_CONFIG.CACHE.DEFAULT_TTL,
+      maxEntries: API_CONFIG.CACHE.MAX_ENTRIES,
+    },
+  };
+}
 
 // Get cache TTL for specific story endpoints
 export function getStoryCacheTtl(endpoint: 'latest' | 'topFollow' | 'topDay'): number {

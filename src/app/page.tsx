@@ -73,13 +73,13 @@ interface ProgressiveHomeData {
  * 3. Independent section loading and error handling
  * 4. SEO optimization with structured data
  */
-export default function Home({ searchParams }: HomePageProps) {
+export default function HomePage({ searchParams }: HomePageProps) {
   // ========================
   // 1. DOMAIN CONFIGURATION
   // ========================
   const domainConfig = useDomain();
   const isConfigLoading = !domainConfig;
-
+  
   // ========================
   // 1.1. READING HISTORY
   // ========================
@@ -251,17 +251,7 @@ export default function Home({ searchParams }: HomePageProps) {
     fetchAllData(newPage);
   }, [fetchAllData]);
   
-  // Section refresh handler - direct implementation
-  const handleRefreshSection = useCallback((section: 'latest' | 'topFollow' | 'topDay') => {
-    const currentPage = progressiveData.pagination.currentPage;
-    
-    if (section === 'latest') {
-      fetchAllData(currentPage);
-    } else {
-      fetchAllData(currentPage); // Refresh all for consistency
-    }
-  }, [fetchAllData, progressiveData.pagination.currentPage]);
-  
+
   // Cancel fetch function
   const cancelFetch = useCallback(() => {
     if (abortControllerRef.current) {
@@ -308,7 +298,8 @@ export default function Home({ searchParams }: HomePageProps) {
        
   // ========================
   // 4. EVENT HANDLERS
-  // ===========
+  // ========================
+
   // ========================
   // 5. SEO OPTIMIZATION
   // ========================
@@ -394,7 +385,7 @@ export default function Home({ searchParams }: HomePageProps) {
   }
 
   // ========================
-  // 8. PROGRESSIVE RENDER
+  // 8. RENDER
   // ========================
   
   return (
@@ -421,15 +412,14 @@ export default function Home({ searchParams }: HomePageProps) {
       )}
       
       <div className="min-h-dvh bg-background text-body-primary">
-        {/* HEADER */}
+        {/* HEADER  */}
         <Header config={domainConfig} />
         
         <main className="pb-24">
-          {/* SEARCH SECTION */}
-          <SearchBar />
-          
-          {/* CATEGORIES */}
-          <CategoryChips categories={domainConfig.content?.categories || []} />
+          {/* SEARCH BAR */}
+          <SearchBar/>
+          {/* CATEGORIES - now using cateChip */}
+          <CategoryChips cateChips={domainConfig.cateChip || []} />
           
           {/* RECENT READING HISTORY - Shows only if user has reading history */}
           {recentReadStories.length > 0 && (

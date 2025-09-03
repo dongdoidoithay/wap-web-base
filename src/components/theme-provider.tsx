@@ -95,10 +95,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     seo: domainData.seo,
     content: domainData.content,
     social: domainData.social,
-    paths: domainData.paths,
-    languages: domainData.languages,
-    api: domainData.api,
-    routes: domainData.routes
   } : null;
   const refreshConfig = domainData?.refreshConfig;
 

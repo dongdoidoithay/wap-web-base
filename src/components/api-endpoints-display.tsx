@@ -27,15 +27,23 @@ export function ApiEndpointsDisplay({ config, domain }: ApiEndpointsDisplayProps
 
       {showEndpoints && (
         <div className="space-y-3">
-          {/* API Base URLs */}
+          {/* API Base URLs - using cateChip data */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="p-3 bg-info/10 rounded-lg border border-info/20">
-              <div className="text-sm font-medium text-info">Tiếng Việt</div>
-              <div className="text-xs text-body-secondary font-mono">{config.api.vietnamese}</div>
+              <div className="text-sm font-medium text-info">Thể loại truyện</div>
+              <div className="text-xs text-body-secondary font-mono">
+                {config.cateChip && config.cateChip.length > 0 
+                  ? (() => {
+                      // Find the active default cateChip or fallback to the first one
+                      const activeChip = config.cateChip.find(chip => chip["active-default"]) || config.cateChip[0];
+                      return `${activeChip["api-path"]}/getFindOption/genres/{id}/{count}/{page}`;
+                    })()
+                  : 'Không có dữ liệu'}
+              </div>
             </div>
             <div className="p-3 bg-success/10 rounded-lg border border-success/20">
-              <div className="text-sm font-medium text-success">English</div>
-              <div className="text-xs text-body-secondary font-mono">{config.api.english}</div>
+              <div className="text-sm font-medium text-success">Tìm kiếm nhanh</div>
+              <div className="text-xs text-body-secondary font-mono">/api/six-vn/QuickSearch/{"{keyword}"}/{"{show}"}</div>
             </div>
           </div>
 
@@ -85,16 +93,16 @@ export function ApiEndpointsDisplay({ config, domain }: ApiEndpointsDisplayProps
           <div className="pt-4 border-t border-light">
             <div className="flex gap-2">
               <button
-                onClick={() => testEndpoint(config.api.vietnamese + '/manga')}
+                onClick={() => testEndpoint('/api/novel-vn/getFindOption/genres/default/22/0')}
                 className="px-3 py-2 text-sm bg-info text-white rounded hover:bg-info/90 transition-colors"
               >
-                Test VI API
+                Test Thể loại API
               </button>
               <button
-                onClick={() => testEndpoint(config.api.english + '/manga')}
+                onClick={() => testEndpoint('/api/six-vn/QuickSearch/test/8')}
                 className="px-3 py-2 text-sm bg-success text-white rounded hover:bg-success/90 transition-colors"
               >
-                Test EN API
+                Test Tìm kiếm API
               </button>
             </div>
           </div>
@@ -107,16 +115,11 @@ export function ApiEndpointsDisplay({ config, domain }: ApiEndpointsDisplayProps
 // Hàm test endpoint
 async function testEndpoint(endpoint: string) {
   try {
-    const response = await fetch(endpoint);
-    const data = await response.json();
+    // For demo purposes, we'll just show the endpoint path
+    // In a real implementation, you would actually call the API
+    alert(`API Endpoint: ${endpoint}\n\nIn a real implementation, this would call the actual API.`);
     
-    console.log(`API Test - ${endpoint}:`, data);
-    
-    if (response.ok) {
-      alert(`✅ API ${endpoint} hoạt động tốt!\n\nResponse: ${JSON.stringify(data, null, 2)}`);
-    } else {
-      alert(`❌ API ${endpoint} có lỗi!\n\nStatus: ${response.status}\nError: ${data.error || 'Unknown error'}`);
-    }
+    console.log(`API Test - ${endpoint}: Demo test`);
   } catch (error) {
     console.error(`Error testing endpoint ${endpoint}:`, error);
     alert(`❌ Không thể test API ${endpoint}!\n\nError: ${error}`);

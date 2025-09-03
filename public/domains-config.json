@@ -1,9 +1,10 @@
 {
   "example.com": {
     "domain": "example.com",
-    "name": "test name",
+    "name": "test domain",
     "description": "Website description here",
-    "logo": "🏷️",
+    "logo": "💻",
+    "active-default": "truyen-chu",
     "theme": {
       "primaryColor": "#10B981",
       "secondaryColor": "#059669",
@@ -35,19 +36,17 @@
         "keyword2"
       ],
       "ogImage": "/og.jpg",
+      "googleAnalyticsId": "GA_EXAMPLE_ID",
+      "googleVerification": "google-verification-code",
+      "bingVerification": "bing-verification-code",
+      "yandexVerification": "yandex-verification-code",
+      "baiduVerification": "baidu-verification-code",
+      "naverVerification": "naver-verification-code",
       "template": {
         "detail": "%title% - %author% | %domain%",
         "group": "%group% - %domain%",
         "type": "%type% - %domain%"
       }
-    },
-    "content": {
-      "categories": [
-        "News",
-        "Tutorial",
-        "Review"
-      ],
-      "featuredArticles": []
     },
     "social": {
       "facebook": "",
@@ -55,40 +54,33 @@
       "instagram": "",
       "youtube": ""
     },
-    "paths": {
-      "vietnamese": "doc-truyen",
-      "english": "read-manga",
-      "search": "tim-kiem"
-    },
-    "languages": {
-      "default": "vi",
-      "supported": [
-        "vi",
-        "en"
-      ]
-    },
-    "api": {
-      "vietnamese": "/api/manga-vn",
-      "english": "/api/manga-en",
-      "search": "/api/search",
-      "auth": "/api/auth"
-    },
-    "routes": {
-      "doc-truyen": {
-        "path": "doc-truyen",
-        "api": "/api/manga-vn",
-        "language": "vi",
-        "title": "Đọc Truyện",
-        "description": "Content in Vietnamese"
+    "cateChip": [
+      {
+        "id": "truyen-chu",
+        "name": "Truyện Chữ",
+        "description": "Truyện tu tiên, kiếm hiệp, huyền huyễn",
+        "api-path": "/api/novel-vn",
+        "active-default": true,
+        "type": "novel"
       },
-      "read-manga": {
-        "path": "read-manga",
-        "api": "/api/manga-en",
-        "language": "en",
-        "title": "Read Content",
-        "description": "Content in English"
+      {
+        "id": "truyen-six",
+        "name": "Truyện 18+",
+        "description": "Truyện 18+  dành cho các bạn đam mê thể loại 18+",
+        "api-path": "/api/six-vn",
+        "active-default": false,
+        "type": "novel"
+      },
+      {
+        "id": "truyen-tranh",
+        "name": "Truyện tranh",
+        "description": "Tranh mục dành riêng cho cho các bạn đam mê wibu",
+        "api-path": "/api/manga-vn",
+        "active-default": false,
+        "type": "manga"
       }
-    }
+    ],
+    "content": {}
   },
   "techblog.com": {
     "domain": "techblog.com",
@@ -119,37 +111,57 @@
       "gradientTo": "#059669"
     },
     "seo": {
-      "title": "Tech Blog Hub - Tin tức công nghệ và hướng dẫn lập trình",
-      "description": "Cập nhật tin tức công nghệ mới nhất, hướng dẫn lập trình và đánh giá sản phẩm.",
+      "title": "Default Website Title",
+      "description": "Default website description",
       "keywords": [
-        "Công nghệ",
-        "Lập trình",
-        "Tin tức",
-        "Đánh giá",
-        "Hướng dẫn"
+        "keyword1",
+        "keyword2"
       ],
-      "ogImage": "/tech-og.jpg",
-      "googleAnalyticsId": "GA_TECH_ID"
-    },
-    "content": {
-      "categories": [
-        "Tin tức",
-        "Lập trình",
-        "Đánh giá",
-        "Tutorial",
-        "AI/ML"
-      ],
-      "featuredArticles": [
-        1,
-        2,
-        3
-      ]
+      "ogImage": "/og.jpg",
+      "googleAnalyticsId": "GA_EXAMPLE_ID",
+      "googleVerification": "google-verification-code",
+      "bingVerification": "bing-verification-code",
+      "yandexVerification": "yandex-verification-code",
+      "baiduVerification": "baidu-verification-code",
+      "naverVerification": "naver-verification-code",
+      "template": {
+        "detail": "%title% - %author% | %domain%",
+        "group": "%group% - %domain%",
+        "type": "%type% - %domain%"
+      }
     },
     "social": {
-      "facebook": "https://facebook.com/techblog",
-      "twitter": "https://twitter.com/techblog",
-      "youtube": "https://youtube.com/techblog"
-    }
+      "facebook": "",
+      "twitter": "",
+      "instagram": "",
+      "youtube": ""
+    },
+    "cateChip": [
+      {
+        "id": "truyen-chu",
+        "name": "Truyện Chữ",
+        "description": "Truyện tu tiên, kiếm hiệp, huyền huyễn",
+        "api-path": "/api/novel-vn",
+        "active-default": true,
+        "type": "novel"
+      },
+      {
+        "id": "truyen-six",
+        "name": "Truyện 18+",
+        "description": "Truyện 18+  dành cho các bạn đam mê thể loại 18+",
+        "api-path": "/api/six-vn",
+        "active-default": false,
+        "type": "novel"
+      },
+      {
+        "id": "truyen-tranh",
+        "name": "Truyện tranh",
+        "description": "Tranh mục dành riêng cho cho các bạn đam mê wibu",
+        "api-path": "/api/manga-vn",
+        "active-default": false,
+        "type": "manga"
+      }
+    ]
   },
   "lifestyle.com": {
     "domain": "lifestyle.com",
@@ -180,35 +192,56 @@
       "gradientTo": "#059669"
     },
     "seo": {
-      "title": "Lifestyle Magazine - Chia sẻ cuộc sống đẹp",
-      "description": "Chia sẻ về cuộc sống, sức khỏe, du lịch và những điều thú vị trong cuộc sống.",
+      "title": "Default Website Title",
+      "description": "Default website description",
       "keywords": [
-        "Lifestyle",
-        "Sức khỏe",
-        "Du lịch",
-        "Ẩm thực",
-        "Thời trang"
+        "keyword1",
+        "keyword2"
       ],
-      "ogImage": "/lifestyle-og.jpg",
-      "googleAnalyticsId": "GA_LIFESTYLE_ID"
-    },
-    "content": {
-      "categories": [
-        "Sức khỏe",
-        "Du lịch",
-        "Ẩm thực",
-        "Thời trang",
-        "Làm đẹp"
-      ],
-      "featuredArticles": [
-        1,
-        2,
-        3
-      ]
+      "ogImage": "/og.jpg",
+      "googleAnalyticsId": "GA_EXAMPLE_ID",
+      "googleVerification": "google-verification-code",
+      "bingVerification": "bing-verification-code",
+      "yandexVerification": "yandex-verification-code",
+      "baiduVerification": "baidu-verification-code",
+      "naverVerification": "naver-verification-code",
+      "template": {
+        "detail": "%title% - %author% | %domain%",
+        "group": "%group% - %domain%",
+        "type": "%type% - %domain%"
+      }
     },
     "social": {
-      "instagram": "https://instagram.com/lifestyle",
-      "facebook": "https://facebook.com/lifestyle"
-    }
+      "facebook": "",
+      "twitter": "",
+      "instagram": "",
+      "youtube": ""
+    },
+    "cateChip": [
+      {
+        "id": "truyen-chu",
+        "name": "Truyện Chữ",
+        "description": "Truyện tu tiên, kiếm hiệp, huyền huyễn",
+        "api-path": "/api/novel-vn",
+        "active-default": true,
+        "type": "novel"
+      },
+      {
+        "id": "truyen-six",
+        "name": "Truyện 18+",
+        "description": "Truyện 18+  dành cho các bạn đam mê thể loại 18+",
+        "api-path": "/api/six-vn",
+        "active-default": false,
+        "type": "novel"
+      },
+      {
+        "id": "truyen-tranh",
+        "name": "Truyện tranh",
+        "description": "Tranh mục dành riêng cho cho các bạn đam mê wibu",
+        "api-path": "/api/manga-vn",
+        "active-default": false,
+        "type": "manga"
+      }
+    ]
   }
 }

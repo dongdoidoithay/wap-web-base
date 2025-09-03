@@ -3,8 +3,9 @@
  * Handles fetching detailed information about individual stories
  */
 
-import { STORY_API_CONFIG } from '../lib/api-config';
+import { API_CONFIG, getStoryApiConfig } from '../lib/api-config';
 import type { StoryItem, StoryDetail, Chapter } from '../types';
+import { getCurrentApiPath } from './story-api.service';
 
 export interface StoryDetailResponse {
   data: any; // Changed to any to handle the raw API response
@@ -13,8 +14,10 @@ export interface StoryDetailResponse {
   responseTime?: number;
 }
 
-// Use centralized API configuration
-const apiConfig = STORY_API_CONFIG;
+// Use centralized API configuration with dynamic API path
+const apiConfig = getStoryApiConfig(typeof window !== 'undefined' 
+  ? localStorage.getItem('selectedApiPath') || '/api/novel-vn'
+  : '/api/novel-vn');
 
 /**
  * Client-side function to fetch story detail
