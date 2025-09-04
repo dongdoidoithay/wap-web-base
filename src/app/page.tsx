@@ -425,6 +425,13 @@ export default function HomePage({ searchParams }: HomePageProps) {
           {/* CATEGORIES - now using cateChip */}
           <CategoryChips cateChips={domainConfig.cateChip || []} />
           
+          {/* MAIN HEADING */}
+          <div className="mx-auto max-w-screen-sm px-3 pt-6 pb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-primary text-center">
+              {domainConfig.name || TextConstants.common.home[currentLang]}
+            </h1>
+          </div>
+          
           {/* RECENT READING HISTORY - Shows only if user has reading history */}
           {recentReadStories.length > 0 && (
             <StorySection
