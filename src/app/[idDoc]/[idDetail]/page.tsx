@@ -234,7 +234,7 @@ console.log('reading---1')
                 chapterName: storyData.detail_documents.nameChapter,
                 currentChapterIndex: storyData.detail_documents.currentChapterIndex || 0,
                 totalChapters: storyData.detail_documents.totalChapters || 1,
-                storyImage: storyData.infoDoc.image || '',
+                storyImage:storyData.infoDoc.tags|| storyData.infoDoc.image || '',
                 storyAuthor: storyData.infoDoc.authName || '',
                 storyGenres: storyData.infoDoc.genresName || '',
                 chapterDate: storyData.detail_documents.date || ''
