@@ -8,12 +8,11 @@ import { TextConstants } from '@/lib/text-constants';
 interface ChapterReadingLayoutProps {
   params: Promise<{
     idDoc: string;
-    IdDetail: string;
   }>;
   children: React.ReactNode;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ idDoc: string; idDetail: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ idDoc: string }> }): Promise<Metadata> {
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
   const config = getDomainConfigSync(hostname);
@@ -107,18 +106,14 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
 
     
     const storyName = `${TextConstants.storyDetail.story_label.vi} ${resolvedParams.idDoc}`;
-    const chapterName = `${TextConstants.storyDetail.chapter_label.vi} ${resolvedParams.idDetail}`;
 
-    const title = `${chapterName} - ${storyName} | ${config.name}`;
+    const title = `${TextConstants.storyDetail.read_story.vi} - ${storyName} | ${config.name}`;
     const description = TextConstants.storyDetail.seo_description.vi
-      .replace('{chapterName}', chapterName)
       .replace('{storyName}', storyName)
       .replace('{domainName}', config.name);
     const keywords = [
       storyName,
-      chapterName,
       TextConstants.storyDetail.seo_keyword_story.vi,
-      TextConstants.storyDetail.seo_keyword_chapter.vi,
       config.name
     ];
 
@@ -142,7 +137,7 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
             url: config.seo?.ogImage || '',
             width: 1200,
             height: 630,
-            alt: `${chapterName} - ${storyName}`,
+            alt: `${TextConstants.storyDetail.read_story.vi} - ${storyName}`,
           },
         ],
         locale: 'vi_VN',
@@ -169,7 +164,6 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
       },
       other: {
         'article:section': TextConstants.storyDetail.seo_section.vi,
-        'article:tag': chapterName,
       },
     };
   } catch (error) {

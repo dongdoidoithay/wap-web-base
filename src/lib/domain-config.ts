@@ -3,6 +3,8 @@ export interface DomainConfig {
   name: string;
   description: string;
   logo: string;
+  // Add active-default field at domain level
+  "active-default"?: string;
   theme: {
     // Primary colors
     primaryColor: string;     // Main brand color
@@ -248,6 +250,8 @@ function getFallbackDomainConfigs(): Record<string, DomainConfig> {
       name: 'Example Domain',
       description: 'A sample domain configuration',
       logo: '/logo.png',
+      // Add active-default field
+      "active-default": '',
       theme: {
         // Primary colors
         primaryColor: '#10B981',      // emerald-500
@@ -404,6 +408,8 @@ export function getDomainConfigSync(hostname: string): DomainConfig {
     name: 'WAP Content Hub',
     description: 'A lean Next.js + TailwindCSS template optimized for Core Web Vitals, schema, and content hubs.',
     logo: '🏷️',
+    // Add active-default field
+    "active-default": '',
     theme: {
       // Primary colors
       primaryColor: '#10B981',      // emerald-500

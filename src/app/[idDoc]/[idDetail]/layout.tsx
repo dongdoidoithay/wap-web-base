@@ -8,7 +8,7 @@ import { TextConstants } from '@/lib/text-constants';
 interface ChapterReadingLayoutProps {
   params: Promise<{
     idDoc: string;
-    IdDetail: string;
+    idDetail: string;
   }>;
   children: React.ReactNode;
 }

@@ -4,13 +4,15 @@ import { getArticlesByPage, getSitemapPagesCount } from '../../../../lib/databas
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { page: string } }
+  context: { params: Promise<{ page: string }> }
 ) {
   const hostname = request.headers.get('host') || '';
   const config = getDomainConfigSync(hostname);
   const baseUrl = `https://${config.domain}`;
   
-  const page = parseInt(params.page);
+  // Await the params object in Next.js 15
+  const { page: pageParam } = await context.params;
+  const page = parseInt(pageParam);
   
   if (isNaN(page) || page < 1) {
     return new NextResponse('Invalid page number', { status: 400 });
@@ -68,4 +70,4 @@ ${articles.map((article) => {
     console.error('Error generating sitemap:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
-} 
+}

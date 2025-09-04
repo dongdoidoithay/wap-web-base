@@ -12,7 +12,7 @@ import {
 import { ThemeColorInput } from '@/components/theme-color-input';
 import { CategoryManager } from '@/components/category-manager';
 import { CateChipManager } from '@/components/cate-chip-manager';
-import { createDefaultConfig } from '@/lib/default-config';
+import { getDefaultDomainConfig } from '@/lib/default-config';
 
 // Custom SVG Icons
 const GlobeAltIcon = ({ className }: { className?: string }) => (
@@ -104,6 +104,8 @@ export default function DomainsAdminPage() {
     name: '',
     description: '',
     logo: '🏷️',
+    // Add active-default field
+    "active-default": '',
     theme: { 
       // Primary colors
       primaryColor: '#10B981', 
@@ -155,7 +157,8 @@ export default function DomainsAdminPage() {
     },
     content: { categories: [], featuredArticles: [] },
     social: {},
-    // cateChip is intentionally left undefined initially
+    // Initialize cateChip as empty array
+    cateChip: []
   });
 
   useEffect(() => {
@@ -327,9 +330,15 @@ export default function DomainsAdminPage() {
     }
     
     try {
-      const defaultConfig = createDefaultConfig();
+      const defaultConfig = getDefaultDomainConfig();
       
-      const success = await updateDomainConfig(selectedDomain, defaultConfig);
+      // Ensure active-default field is included
+      const configToRestore = {
+        ...defaultConfig,
+        "active-default": defaultConfig["active-default"] || ''
+      };
+      
+      const success = await updateDomainConfig(selectedDomain, configToRestore);
       if (success) {
         await reloadCache();
         
@@ -393,6 +402,8 @@ export default function DomainsAdminPage() {
         name: newConfig.name!,
         description: newConfig.description!,
         logo: newConfig.logo || '🏷️',
+        // Add active-default field
+        "active-default": '',
         theme: newConfig.theme || { 
           // Primary colors
           primaryColor: '#10B981', 
@@ -468,6 +479,8 @@ export default function DomainsAdminPage() {
           name: '',
           description: '',
           logo: '🏷️',
+          // Add active-default field
+          "active-default": '',
           theme: { 
             // Primary colors
             primaryColor: '#10B981', 
@@ -777,6 +790,22 @@ export default function DomainsAdminPage() {
                             onChange={(e) => updateConfig({ logo: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                           />
+                        </div>
+                        {/* Active Default Field */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Active Default API Type
+                          </label>
+                          <input
+                            type="text"
+                            value={config["active-default"] || ''}
+                            onChange={(e) => updateConfig({ "active-default": e.target.value })}
+                            placeholder="Enter default API type"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            Specify which API type is loaded by default for this domain
+                          </p>
                         </div>
                       </div>
                     </div>

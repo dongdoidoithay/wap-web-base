@@ -6,6 +6,8 @@ export function getDefaultDomainConfig(): DomainConfig {
     name: 'Default Domain',
     description: 'Default domain configuration',
     logo: '/logo.png',
+    // Add active-default field
+    "active-default": '',
     theme: {
       // Primary colors
       primaryColor: '#10B981',      // emerald-500
