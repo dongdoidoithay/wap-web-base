@@ -87,6 +87,14 @@ const nextConfig: NextConfig = {
         destination: '/api/sitemap-articles/:page',
       },
       {
+        source: '/:type-info-:page.xml',
+        destination: '/api/:type/info/:page',
+      },
+      {
+        source: '/:type-detail-:page.xml',
+        destination: '/api/:type/detail/:page',
+      },
+      {
         source: '/robots.txt',
         destination: '/api/robots',
       },
