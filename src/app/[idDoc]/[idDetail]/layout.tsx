@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
 
   try {
     // Fetch real story data using cached function
-    const storyResult = await getCachedStoryDetail(resolvedParams.idDoc,resolvedParams.idDetail);
+    const storyResult = await getCachedStoryDetail(resolvedParams.idDoc,resolvedParams.idDetail,'');
     console.log('reading---3',storyResult);
     if (storyResult.success && storyResult.data) {
       const apiData = storyResult.data as any;

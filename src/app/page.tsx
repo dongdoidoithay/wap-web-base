@@ -156,8 +156,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
     // Create new abort controller
     abortControllerRef.current = new AbortController();
     
-    console.log('🚀 Starting optimized data fetch for all sections...');
-    
+
     // Set all loading states to true
     setProgressiveData(prev => ({
       ...prev,
@@ -236,8 +235,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
         return newState;
       });
       
-      console.log('✅ All APIs completed successfully');
-      
+   
     } catch (error) {
       console.error('❌ Error in fetchAllData:', error);
       // Set all to error state
@@ -356,7 +354,6 @@ export default function HomePage({ searchParams }: HomePageProps) {
 
   // Start data loading when config and params are ready
   useEffect(() => {
-    console.log('Starting data loading...',currentPageFromParams);
       fetchAllData(currentPageFromParams);
   }, []);
 
@@ -391,7 +388,6 @@ export default function HomePage({ searchParams }: HomePageProps) {
   // ========================
   // 8. RENDER
   // ========================
-  console.log('✅ All data loaded successfully render');
   return (
     <>
       {/* SEO HEAD */}
@@ -428,7 +424,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
           {/* MAIN HEADING */}
           <div className="mx-auto max-w-screen-sm px-3 pt-6 pb-4">
             <h1 className="text-2xl md:text-3xl font-bold text-primary text-center">
-              {domainConfig.name || TextConstants.common.home[currentLang]}
+              {domainConfig.seo.title || TextConstants.common.home[currentLang]}
             </h1>
           </div>
           

@@ -1,28 +1,45 @@
-import { Metadata } from 'next';
+import { Metadata ,ResolvingMetadata} from 'next';
 import { headers } from 'next/headers';
 import { getDomainConfigSync } from '@/lib/domain-config';
 import { getCachedStoryDetail } from '@/lib/cached-story-detail';
 import { fetchStoryDetail } from '@/services/story-detail.service';
 import { TextConstants } from '@/lib/text-constants';
 
-interface ChapterReadingLayoutProps {
-  params: Promise<{
-    idDoc: string;
-  }>;
-  children: React.ReactNode;
-}
 
-export async function generateMetadata({ params }: { params: Promise<{ idDoc: string }> }): Promise<Metadata> {
+type Props = {
+  params: Promise<{ idDoc: string }>
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+ 
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata>  {
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
   const config = getDomainConfigSync(hostname);
   
   // Await params before accessing properties
   const resolvedParams = await params;
-
+  const resolvedSearchParams = searchParams;
+  console.log('type--->',resolvedSearchParams);
+  
+  // Extract the type parameter and find the corresponding API path
+  let apiPath = '';
+  const typeParam = resolvedSearchParams?.type as string || '';
+  console.log('type parameter:', typeParam);
+  
+  if (typeParam && config.cateChip) {
+    const chip = config.cateChip.find(item => item.id === typeParam);
+    if (chip) {
+      apiPath = chip["api-path"];
+      console.log('Found API path:', apiPath);
+    }
+  }
+  
   try {
-    // Fetch real story data using cached function
-    const storyResult = await getCachedStoryDetail(resolvedParams.idDoc,"_");
+    // Fetch real story data using cached function with the correct API path
+    const storyResult = await getCachedStoryDetail(resolvedParams.idDoc,"_",apiPath);
     console.log('reading---3',storyResult);
     if (storyResult.success && storyResult.data) {
       const apiData = storyResult.data as any;
@@ -181,6 +198,6 @@ export async function generateMetadata({ params }: { params: Promise<{ idDoc: st
   }
 }
 
-export default function ChapterReadingLayout({ children }: ChapterReadingLayoutProps) {
+export default function ChapterReadingLayout({ children }:any) {
   return children;
 }

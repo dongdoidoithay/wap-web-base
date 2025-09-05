@@ -24,6 +24,7 @@ interface StoryReadingPageProps {
 
 interface ResolvedSearchParams {
   autoplay?: string;
+  type?: string;
   [key: string]: string | string[] | undefined;
 }
 
@@ -131,7 +132,7 @@ export default function StoryReadingPage({ params: paramsPromise, searchParams }
   const params = React.use(paramsPromise);
   const resolvedSearchParams = React.use(searchParams || Promise.resolve({})) as ResolvedSearchParams;
   const router = useRouter();
-console.log('reading---1')
+
 
   // ========================
   // 1. DOMAIN CONFIGURATION
@@ -192,6 +193,7 @@ console.log('reading---1')
     setSelectedChipType(chipType);
   }, []);
 
+  
   // ========================
   // 4. DATA LOADING
   // ========================
@@ -203,8 +205,30 @@ console.log('reading---1')
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       try {
+        let apiPath='';
+        if(resolvedSearchParams.type!=='' && domainConfig)
+        {
+          const chip = domainConfig?.cateChip?.find(item => item.id === resolvedSearchParams.type);
+          if (chip) {
+            localStorage.setItem('selectedApiPath', chip["api-path"]);
+            apiPath=chip["api-path"];
+            // Save the type to localStorage if it exists
+            if (chip.type) {
+              localStorage.setItem('selectedChipType', chip.type);
+            } else {
+              // Remove the type from localStorage if it doesn't exist
+              localStorage.removeItem('selectedChipType');
+            }
+            
+            // Save the language to localStorage if it exists
+            if (chip.lang) {
+              localStorage.setItem('language', chip.lang);
+              // changeLanguage(chip.lang as 'vi' | 'en'); // Commented out as changeLanguage is not defined in this scope
+            }
+          }
+        }
         // Use cached data from layout instead of calling API again
-        const result = await getCachedStoryDetail(params.idDoc, params.idDetail);
+        const result = await getCachedStoryDetail(params.idDoc, params.idDetail,apiPath);
         console.log('reading---2 (using cached data)',result);
         if (result.success && result.data) {
           // Handle the API response structure

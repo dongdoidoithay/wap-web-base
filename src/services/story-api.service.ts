@@ -144,7 +144,7 @@ function transformItem(item: any, index: number): any {
   return {
     idDoc: item.idDoc,
     name: item.name ,
-    sortDesc:item.sortDesc || '',
+    sortDesc:item.sortDesc || item.desc||'',
     image:  item.tags ||item.image || '',
     thumbnail: item.image || '',
     url: item.url  || '',

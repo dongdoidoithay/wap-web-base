@@ -80,7 +80,7 @@
         "api-path": "/api/manga-vn",
         "active-default": false,
         "type": "manga",
-        "lang": "en"
+        "lang": "vi"
       }
     ],
     "content": {}

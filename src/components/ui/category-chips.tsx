@@ -74,6 +74,8 @@ export function CategoryChips({ cateChips }: CategoryChipsProps) {
       changeLanguage(chip.lang as 'vi' | 'en');
     }
     
+    //set chip Id
+    localStorage.setItem('selectedChipId', chip.id ||'');
     // Set the active chip
     setActiveChipId(chip.id);
     

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { SEOHead } from '@/components/seo-head';
 import { useDomain } from '@/hooks/use-domain';
@@ -123,7 +123,7 @@ export default function StoryReadingPage({ params: paramsPromise }: StoryReading
   // Unwrap params Promise using React.use() as required in Next.js 15+
   const params = React.use(paramsPromise);
   const router = useRouter();
-console.log('reading---1')
+console.log('param---1',params)
 
   // ========================
   // 1. DOMAIN CONFIGURATION
@@ -295,13 +295,15 @@ console.log('reading---1')
       setTtsState(prev => ({ ...prev, autoNext: !prev.autoNext }));
     }, [])
   };
-
+  const searchParams = useSearchParams();
+  const type = searchParams.get('type') || '';
   // ========================
   // 4. DATA LOADING
   // ========================
   useEffect(() => {
+   
+
     const loadChapterContent = async () => {
-      console.log('reading---1#',params);
       if (!params.idDoc ) return;
 
       setState(prev => ({ ...prev, loading: true, error: null }));
@@ -316,10 +318,30 @@ console.log('reading---1')
           chapterName: storyHistory.chapterName
         });
         } 
-
+        let apiPath='';
+        if(type!=='' && domainConfig)
+        {
+          const chip = domainConfig?.cateChip?.find(item => item.id === type);
+          if (chip) {
+            localStorage.setItem('selectedApiPath', chip["api-path"]);
+            apiPath=chip["api-path"];
+            // Save the type to localStorage if it exists
+            if (chip.type) {
+              localStorage.setItem('selectedChipType', chip.type);
+            } else {
+              // Remove the type from localStorage if it doesn't exist
+              localStorage.removeItem('selectedChipType');
+            }
+            
+            // Save the language to localStorage if it exists
+            if (chip.lang) {
+              localStorage.setItem('language', chip.lang);
+              // changeLanguage(chip.lang as 'vi' | 'en'); // Commented out as changeLanguage is not defined in this scope
+            }
+          }
+        }
         // Use cached data from layout instead of calling API again
-        const result = await getCachedStoryDetail(params.idDoc, _idDetail);
-        console.log('reading---2 (using cached data)',result);
+        const result = await getCachedStoryDetail(params.idDoc, _idDetail,apiPath);
         if (result.success && result.data) {
           // Handle the API response structure
           const apiData = result.data as any;
@@ -352,7 +374,7 @@ console.log('reading---1')
 
       if(!isConfigLoading)
       loadChapterContent();
-  }, [params.idDoc ,isConfigLoading]);
+  }, [params.idDoc ,isConfigLoading,type]);
 
   // Load current reading chapter from history
 /*   useEffect(() => {

@@ -3,9 +3,7 @@
  * Handles fetching detailed information about individual stories
  */
 
-import { API_CONFIG, getStoryApiConfig } from '../lib/api-config';
-import type { StoryItem, StoryDetail, Chapter } from '../types';
-import { getCurrentApiPath } from './story-api.service';
+import { getStoryApiConfig } from '../lib/api-config';
 
 export interface StoryDetailResponse {
   data: any; // Changed to any to handle the raw API response
@@ -15,16 +13,18 @@ export interface StoryDetailResponse {
 }
 
 // Use centralized API configuration with dynamic API path
-const apiConfig = getStoryApiConfig(typeof window !== 'undefined' 
+let apiConfig = getStoryApiConfig(typeof window !== 'undefined' 
   ? localStorage.getItem('selectedApiPath') || '/api/novel-vn'
   : '/api/novel-vn');
 
 /**
  * Client-side function to fetch story detail
  */
-export async function fetchStoryDetail(idDoc: string,idDetail:string): Promise<StoryDetailResponse> {
+export async function fetchStoryDetail(idDoc: string,idDetail:string,apiPath:string): Promise<StoryDetailResponse> {
   const startTime = Date.now();
-
+  if(apiPath!==''){
+     apiConfig = getStoryApiConfig(apiPath);
+  }
   try {
     if (!idDoc) {
       throw new Error('Story slug is required');
