@@ -199,7 +199,6 @@ export default function StoryReadingPage({ params: paramsPromise, searchParams }
   // ========================
   useEffect(() => {
     const loadChapterContent = async () => {
-      console.log('reading---1#',params);
       if (!params.idDoc || !params.idDetail ) return;
 
       setState(prev => ({ ...prev, loading: true, error: null }));
@@ -229,7 +228,6 @@ export default function StoryReadingPage({ params: paramsPromise, searchParams }
         }
         // Use cached data from layout instead of calling API again
         const result = await getCachedStoryDetail(params.idDoc, params.idDetail,apiPath);
-        console.log('reading---2 (using cached data)',result);
         if (result.success && result.data) {
           // Handle the API response structure
           const apiData = result.data as any;
@@ -638,7 +636,7 @@ export default function StoryReadingPage({ params: paramsPromise, searchParams }
     // If type is manga, process content as images separated by #
     if (selectedType === 'manga') {
       const imageUrls = content.split('#').filter(url => url.trim().length > 0);
-      return imageUrls.map(url => `<img src="${url.trim()}" alt="Manga page" class="w-full h-auto mb-4" />`).join('\n');
+      return imageUrls.map(url => `<img src="${url.trim()}" alt="Manga page" class="w-full h-auto " />`).join('\n');
     }
     
     // Default behavior for novel and other types (text content)
@@ -731,7 +729,7 @@ export default function StoryReadingPage({ params: paramsPromise, searchParams }
 
   const { detail_documents, infoDoc } = state.storyDetail;
   const formattedContent = formatContent(detail_documents.source);
-console.log('formattedContent', infoDoc);
+
 
   // ========================
   // 8. RENDER CHAPTER CONTENT
@@ -1080,7 +1078,7 @@ console.log('formattedContent', infoDoc);
               )}
 
               {/* CHAPTER CONTENT */}
-              <div className="bg-card rounded-lg p-6 md:p-8 shadow-sm border">
+              <div className="bg-card rounded-lg p-2 shadow-sm border">
                 <div 
                   ref={contentRef}
                   className="prose prose-lg max-w-none text-body-primary leading-relaxed whitespace-pre-wrap"

@@ -7,7 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const headersList = await headers();
   const hostname = headersList.get('host') || '';
   const config = await getDomainConfig(hostname);
-    
+  console.log('sitemap-cf',config);
   
   const baseUrl = `https://${config.domain}`;
   
