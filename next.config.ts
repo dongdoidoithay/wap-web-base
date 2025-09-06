@@ -1,16 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
+   eslint: {
     ignoreDuringBuilds: true,
   },
-  
-  // Powerpacked with performance optimizations
-  poweredByHeader: false,
-  
-  // Enable experimental features for better performance
+  // Enable experimental features
   experimental: {
-    optimizeCss: true,
+     optimizeCss: true,
     optimizePackageImports: ['lucide-react'],
     turbo: {
       rules: {
@@ -22,20 +18,19 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Modern JavaScript target to reduce bundle size
+    // Modern JavaScript target to reduce bundle size
   transpilePackages: [],
-  
-  // Image optimization with advanced settings
+  // Image optimization
   images: {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year
+     minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  // Performance-optimized headers
+  // Security headers
   async headers() {
     return [
       {
@@ -71,7 +66,7 @@ const nextConfig: NextConfig = {
             value: 'no-store, max-age=0',
           },
         ],
-      },
+      }, 
       {
         source: '/_next/static/(.*)',
         headers: [

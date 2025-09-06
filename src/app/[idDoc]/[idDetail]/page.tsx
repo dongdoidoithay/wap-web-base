@@ -627,11 +627,12 @@ export default function StoryReadingPage({ params: paramsPromise, searchParams }
       }
     };
   }, []);
-
+  
+const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
   // Format content based on type
   const formatContent = (content: string) => {
     // Get the selected chip type from localStorage
-    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+    
     
     // If type is manga, process content as images separated by #
     if (selectedType === 'manga') {
@@ -1081,7 +1082,7 @@ export default function StoryReadingPage({ params: paramsPromise, searchParams }
               <div className="bg-card rounded-lg p-2 shadow-sm border">
                 <div 
                   ref={contentRef}
-                  className="prose prose-lg max-w-none text-body-primary leading-relaxed whitespace-pre-wrap"
+                  className={`prose prose-lg max-w-none text-body-primary leading-relaxed ${selectedType != 'manga'?'whitespace-pre-wrap':''}`}
                   dangerouslySetInnerHTML={{ __html: formattedContent }}
                 />
               </div>

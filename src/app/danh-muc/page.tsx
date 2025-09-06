@@ -44,7 +44,7 @@ export default function CategoryPage() {
   
   // Abort controller for cancelling requests
   const abortControllerRef = useRef<AbortController | null>(null);
-
+ const type= localStorage.getItem('selectedChipId');
   // ========================
   // 3. DATA FETCHING
   // ========================
@@ -229,7 +229,7 @@ export default function CategoryPage() {
                     {genres.map((genre) => (
                       <Link
                         key={genre.id}
-                        href={`/truyen-danh-muc?id=${genre.id}&name=${encodeURIComponent(genre.name)}`}
+                        href={`/truyen-danh-muc?id=${genre.id}&name=${encodeURIComponent(genre.name)}&type=${type}`}
                         className="bg-card border rounded-lg p-4 hover:bg-primary/10 hover:border-primary transition-all duration-200 group"
                       >
                         <div className="flex flex-col">

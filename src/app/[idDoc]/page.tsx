@@ -609,11 +609,11 @@ console.log('param---1',params)
   // ========================
   // 7. HELPER FUNCTIONS
   // ========================
-  
+   const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
   // Format content based on type
   const formatContent = (content: string) => {
     // Get the selected chip type from localStorage
-    const selectedType = typeof window !== 'undefined' ? localStorage.getItem('selectedChipType') : null;
+   
     
     // If type is manga, process content as images separated by #
     if (selectedType === 'manga') {
@@ -1073,7 +1073,7 @@ console.log('param---1',params)
               {/* CHAPTER CONTENT */}
               <div className="bg-card rounded-lg p-2 shadow-sm border">
                 <div 
-                  className="prose prose-lg max-w-none text-body-primary leading-relaxed whitespace-pre-wrap"
+                  className={`prose prose-lg max-w-none text-body-primary leading-relaxed ${selectedType != 'manga'?'whitespace-pre-wrap':''}`}
                   dangerouslySetInnerHTML={{ __html: formattedContent }}
                 />
               </div>

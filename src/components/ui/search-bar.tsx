@@ -103,10 +103,10 @@ export function SearchBar() {
   const handleResultClick = useCallback((result: QuickSearchResult) => {
     setIsQuickSearchOpen(false);
     setQuery(result.name);
-    
+     const type= localStorage.getItem('selectedChipId');
     // Navigate to story detail page
     if (result.idDoc) {
-      router.push(`/${result.idDoc}`);
+      router.push(`/${result.idDoc}?type=${type}`);
     }
   }, [router]);
   
@@ -202,7 +202,7 @@ export function SearchBar() {
                       <button
                         key={result.idDoc || index}
                         onClick={() => handleResultClick(result)}
-                        className="w-full text-left p-3 rounded-lg hover:bg-muted/50 transition-colors group"
+                        className="w-full text-left p-3 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer"
                       >
                         <div className="flex items-start gap-3">
                           {/* Story thumbnail */}

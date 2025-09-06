@@ -22,7 +22,7 @@ interface CategoryChipsProps {
 export function CategoryChips({ cateChips }: CategoryChipsProps) {
   const [activeChipId, setActiveChipId] = useState<string | null>(null);
   const { currentLang, changeLanguage } = useLanguage();
-
+console.log("cateChips",cateChips);
   // Show all cateChips regardless of language
   const displayedCateChips = cateChips;
 
@@ -37,6 +37,8 @@ export function CategoryChips({ cateChips }: CategoryChipsProps) {
         if (savedChip.type) {
           localStorage.setItem('selectedChipType', savedChip.type);
         }
+        // Save chip ID to localStorage
+        localStorage.setItem('selectedChipId', savedChip.id || '');
         // Set the current API path in the service
         setCurrentApiPath(savedApiPath);
       }
@@ -50,6 +52,8 @@ export function CategoryChips({ cateChips }: CategoryChipsProps) {
         if (defaultChip.type) {
           localStorage.setItem('selectedChipType', defaultChip.type);
         }
+        // Save chip ID to localStorage (this is what you want)
+        localStorage.setItem('selectedChipId', defaultChip.id || '');
         // Set the current API path in the service
         setCurrentApiPath(defaultChip["api-path"]);
       }
@@ -74,10 +78,9 @@ export function CategoryChips({ cateChips }: CategoryChipsProps) {
       changeLanguage(chip.lang as 'vi' | 'en');
     }
     
-    //set chip Id
-    localStorage.setItem('selectedChipId', chip.id ||'');
-    // Set the active chip
+    // Set the active chip ID in state and localStorage
     setActiveChipId(chip.id);
+    localStorage.setItem('selectedChipId', chip.id || '');
     
     // Set the current API path in the service
     setCurrentApiPath(chip["api-path"]);
