@@ -1,11 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-   eslint: {
+  eslint: {
     ignoreDuringBuilds: true,
   },
-  // Enable experimental features
+  
+  // Powerpacked with performance optimizations
+  poweredByHeader: false,
+  
+  // Enable experimental features for better performance
   experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react'],
     turbo: {
       rules: {
         '*.svg': {
@@ -16,14 +22,20 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Image optimization
+  // Modern JavaScript target to reduce bundle size
+  transpilePackages: [],
+  
+  // Image optimization with advanced settings
   images: {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year
+    dangerouslyAllowSVG: false,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  // Security headers
+  // Performance-optimized headers
   async headers() {
     return [
       {
@@ -45,6 +57,10 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
           },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
         ],
       },
       {
@@ -53,6 +69,15 @@ const nextConfig: NextConfig = {
           {
             key: 'Cache-Control',
             value: 'no-store, max-age=0',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },

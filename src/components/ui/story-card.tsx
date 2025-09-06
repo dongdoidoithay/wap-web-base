@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface StoryItem {
   idDoc?: string;
@@ -57,16 +58,22 @@ export function StoryCard({ story, index, showImages, variant = 'list' }: StoryC
         className="block rounded-xl border border-light bg-surface p-3 shadow-sm hover:bg-primary/5 transition-colors"
       >
         {story.image || story.thumbnail ? (
-          <img
-            src={story.image || story.thumbnail}
-            alt={story.name}
-            loading="lazy"
-            className="w-full h-24 rounded-lg object-cover mb-2"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/images/placeholder.jpg';
-            }}
-          />
+          <div className="relative w-full h-24 mb-2">
+            <Image
+              src={story.image || story.thumbnail}
+              alt={story.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="rounded-lg object-cover"
+              loading="lazy"
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/placeholder.jpg';
+              }}
+            />
+          </div>
         ) : (
           <div className="w-full h-24 rounded-lg bg-surface border border-light flex items-center justify-center mb-2">
             <span className="text-muted">📚</span>
@@ -138,12 +145,17 @@ export function StoryCard({ story, index, showImages, variant = 'list' }: StoryC
         }`}
       >
         {showImages && (story.image || story.thumbnail) && (
-          <div className="flex-shrink-0">
-            <img
+          <div className="flex-shrink-0 relative">
+            <Image
               src={story.image || story.thumbnail}
               alt={story.name}
+              width={112}
+              height={80}
+              sizes="112px"
+              className="rounded-lg object-cover"
               loading="lazy"
-              className="h-20 w-28 rounded-lg object-cover"
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = '/images/placeholder.jpg';
